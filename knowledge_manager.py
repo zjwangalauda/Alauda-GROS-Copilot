@@ -1,0 +1,79 @@
+import os
+import json
+import streamlit as st
+from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
+
+class KnowledgeManager:
+    """
+    负责管理从 0 到 1 积累的“招聘经验碎片”，
+    最终可输出为 Markdown 并送入 RAG 向量库。
+    """
+    def __init__(self, db_path="data/playbook_fragments.json"):
+        self.db_path = db_path
+        # 确保目录存在
+        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        self.fragments = self._load_fragments()
+
+    def _load_fragments(self):
+        if os.path.exists(self.db_path):
+            with open(self.db_path, "r", encoding="utf-8") as f:
+                try:
+                    return json.load(f)
+                except json.JSONDecodeError:
+                    return []
+        return []
+
+    def _save_fragments(self):
+        with open(self.db_path, "w", encoding="utf-8") as f:
+            json.dump(self.fragments, f, ensure_ascii=False, indent=2)
+
+    def add_fragment(self, region, category, content, tags=""):
+        """添加一条经验碎片"""
+        fragment = {
+            "id": f"frag_{datetime.now().strftime('%Y%md%H%M%S')}",
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "region": region,
+            "category": category,
+            "content": content,
+            "tags": tags.split(",") if tags else []
+        }
+        self.fragments.append(fragment)
+        self._save_fragments()
+        return True
+
+    def get_all_fragments(self):
+        return sorted(self.fragments, key=lambda x: x["date"], reverse=True)
+
+    def compile_to_markdown(self, output_file="data/Alauda_Dynamic_Playbook.md"):
+        """将所有碎片编译合成一个完整的 Markdown 知识库文件，供 RAG 使用"""
+        if not self.fragments:
+            return False
+            
+        md_content = "# Alauda 动态演进招聘知识库 (Dynamic Playbook)\n\n"
+        md_content += f"*上次更新时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
+        md_content += "---\n\n"
+        
+        # 按地区分组
+        regions = set(f["region"] for f in self.fragments)
+        for region in regions:
+            md_content += f"## 🌍 区域: {region}\n\n"
+            region_frags = [f for f in self.fragments if f["region"] == region]
+            
+            # 按分类细化
+            categories = set(f["category"] for f in region_frags)
+            for category in categories:
+                md_content += f"### 📌 {category}\n\n"
+                cat_frags = [f for f in region_frags if f["category"] == category]
+                
+                for idx, frag in enumerate(cat_frags, 1):
+                    md_content += f"**经验规则 {idx} ({frag['date']})**\n"
+                    md_content += f"> {frag['content']}\n\n"
+                    if frag["tags"]:
+                        md_content += f"*标签: {', '.join(frag['tags'])}*\n\n"
+        
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(md_content)
+        return True
