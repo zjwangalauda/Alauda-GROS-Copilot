@@ -508,6 +508,60 @@ elif page == "✉️ 模块二：自动化触达 (Outreach)":
                 st.markdown(f'<div style="background-color: #FFFFFF; padding: 30px; border-radius: 8px; border: 1px solid #E5E7EB;">{outreach_result}</div>', unsafe_allow_html=True)
 
 
+elif page == "📄 模块三：简历智能初筛 (Resume Matcher)":
+    st.markdown('<div class="main-title">📄 猎头简历智能雷达 (Resume Matcher)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">解决 HR 看不懂海外技术简历、容易被候选人过度包装忽悠的问题。AI 基于严苛的【算分卡法则】进行防漂移量化打分。</div>', unsafe_allow_html=True)
+
+    # 左右两栏布局：左边 JD，右边简历上传
+    col_jd, col_resume = st.columns([1, 1])
+
+    with col_jd:
+        st.markdown("### 🎯 测量标尺：职位核心要求 (JD)")
+        default_jd_for_match = ""
+        if "generated_jd" in st.session_state:
+            default_jd_for_match = st.session_state["generated_jd"]
+            st.info("💡 已自动继承【模块一】生成的 JD，您也可以手动修改。")
+        else:
+            st.warning("建议先去【模块一】生成职位描述，或在下方手动粘贴 JD。")
+        jd_for_match = st.text_area("粘贴或编辑 JD 核心内容", value=default_jd_for_match, height=350, key="resume_jd_input")
+
+    with col_resume:
+        st.markdown("### 📤 批量上传候选人简历")
+        uploaded_resumes = st.file_uploader(
+            "支持 PDF / TXT 格式，可同时上传多份",
+            type=["pdf", "txt"],
+            accept_multiple_files=True,
+            key="resume_uploader"
+        )
+        if uploaded_resumes:
+            st.success(f"已上传 {len(uploaded_resumes)} 份简历，点击下方按钮开始评估。")
+
+    if st.button("🚀 启动硬核评估 (AI 算分卡)", type="primary", use_container_width=True):
+        if not jd_for_match.strip():
+            st.error("请先在左侧填入职位描述 (JD) 作为评估基准！")
+        elif not uploaded_resumes:
+            st.error("请先在右侧上传至少一份候选人简历！")
+        elif not os.getenv("OPENAI_API_KEY"):
+            st.error("您尚未配置大模型 API Key。")
+        else:
+            st.markdown("---")
+            st.markdown("### 📊 评估结果")
+            for i, resume_file in enumerate(uploaded_resumes):
+                file_bytes = resume_file.read()
+                file_name = resume_file.name
+                with st.spinner(f"🤖 正在评估第 {i+1}/{len(uploaded_resumes)} 份简历：{file_name}..."):
+                    resume_text = agent.extract_text_from_file(file_name, file_bytes)
+                    if resume_text.startswith("文件解析失败") or resume_text == "Unsupported file format.":
+                        st.error(f"❌ {file_name}: {resume_text}")
+                        continue
+                    result = agent.evaluate_resume(jd_for_match, resume_text)
+
+                with st.expander(f"📄 {file_name}", expanded=True):
+                    st.markdown(f'<div style="background-color: #FFFFFF; padding: 20px; border-radius: 8px; border: 1px solid #E5E7EB;">{result}</div>', unsafe_allow_html=True)
+
+            st.success(f"✅ 全部 {len(uploaded_resumes)} 份简历评估完毕！")
+
+
 elif page == "📝 模块四：结构化面试打分卡":
     st.markdown('<div class="main-title">📝 结构化面试评估系统</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">消除面试过程中的主观偏见。基于 JD 自动提取关键维度，生成【行为锚定评分卡 (Scorecard)】与【STAR 题库】。</div>', unsafe_allow_html=True)
