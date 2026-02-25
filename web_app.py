@@ -263,7 +263,8 @@ with st.sidebar:
             "📚 模块五：Playbook 智库问答",
             "🏗️ 模块六：知识库自生长 (0-to-1)"
         ],
-        label_visibility="collapsed" 
+        label_visibility="collapsed"
+    )
 
     st.markdown("---")
     if st.button("🔄 强制清理云端缓存 (如遇异常请点击)", use_container_width=True):
@@ -271,10 +272,6 @@ with st.sidebar:
         st.cache_data.clear()
         st.success("✅ 缓存已清空")
         st.rerun()
-
-    )
-    
-    st.markdown("---")
     st.markdown("""
     <div style="font-size: 0.85rem; color: #6B7280; line-height: 1.5; background-color: #F8FAFC; padding: 12px; border-radius: 6px; border: 1px solid #E2E8F0;">
     💡 <b>系统说明</b><br>
