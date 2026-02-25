@@ -7,14 +7,17 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 
-# 强制覆盖环境变量
+# 强制覆盖环境变量（本地开发走 .env）
 load_dotenv(override=True)
 
-# Streamlit Cloud 部署时通过 Secrets 注入 LLM 凭据（本地开发走 .env）
-for key in ["OPENAI_API_KEY", "OPENAI_API_BASE", "LLM_MODEL"]:
-    val = st.secrets.get(key, "")
-    if val and not os.environ.get(key):
-        os.environ[key] = val
+# Streamlit Cloud 部署时通过 Secrets 注入 LLM 凭据（优先级高于 .env）
+try:
+    for key in ["OPENAI_API_KEY", "OPENAI_API_BASE", "LLM_MODEL"]:
+        val = st.secrets.get(key, "")
+        if val:
+            os.environ[key] = val
+except Exception:
+    pass  # 本地开发没有 secrets.toml 时静默跳过
 
 from recruitment_agent import RecruitmentAgent
 from knowledge_manager import KnowledgeManager
