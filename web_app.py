@@ -1,4 +1,6 @@
 import streamlit as st
+import requests
+from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
 import pandas as pd
@@ -595,103 +597,108 @@ elif page == "📚 模块五：Playbook 智库问答":
             st.session_state.messages.append({"role": "assistant", "content": response})
 
 elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
-    st.markdown('<div class="main-title">🏗️ 知识库自生长 (Knowledge Builder)</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-title">解决“没有现成的手册怎么办”的问题。在招聘实战中将零散的踩坑经验碎片化录入，系统将自动汇编、向量化，形成企业专属动态 Playbook。</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">🏗️ 知识库全自动收割机 (Web Auto-Harvester)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">告别人工录入！只需输入权威政策网页或竞品招聘网址，AI 爬虫将自动提取、清洗并将其沉淀为结构化的本地知识库。</div>', unsafe_allow_html=True)
 
     km = KnowledgeManager()
     
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        st.markdown("### 📝 录入新经验碎片")
-        with st.form("add_fragment_form", clear_on_submit=True):
-            region = st.selectbox("区域 (Region)", ["Singapore", "Malaysia", "South Africa", "Middle East", "Global/General"])
-            category = st.selectbox("经验分类 (Category)", ["薪酬福利与发薪", "签证与工作许可 (Visa/EP)", "候选人寻源渠道", "雇主品牌包装", "劳动法与试用期规定", "其他坑与避雷指南"])
-            content = st.text_area("具体经验与规定细节 *", placeholder="例如：新加坡 EP 签证最新打分制 (COMPASS) 规定，薪资需要达到 5000 SGD，且如果在短缺职业清单内可加分...", height=150)
-            tags = st.text_input("标签 (Tags, 逗号分隔)", placeholder="EP, COMPASS, Visa")
+        st.markdown("### 🕸️ 方式一：AI 网页情报自动抓取")
+        with st.form("auto_harvester_form", clear_on_submit=True):
+            target_url = st.text_input("🔗 输入目标网页 URL", placeholder="例如: https://www.mom.gov.sg/passes-and-visas/employment-pass")
+            region = st.selectbox("归属区域", ["Singapore", "Malaysia", "South Africa", "Middle East", "Global/General"])
+            category = st.selectbox("情报分类", ["官方政策法规 (Official Law)", "薪酬与竞品情报 (Market Intel)", "签证与工作许可 (Visa/EP)", "其他避雷指南"])
             
-            submitted = st.form_submit_button("💾 保存经验碎片", type="primary")
-            if submitted:
-                if not content.strip():
-                    st.error("内容不能为空！")
+            submitted_url = st.form_submit_button("🤖 启动爬虫并提取知识", type="primary")
+            
+            if submitted_url:
+                if not target_url.strip() or not target_url.startswith("http"):
+                    st.error("请输入有效的网页链接（需包含 http:// 或 https://）")
                 else:
-                    km.add_fragment(region, category, content, tags)
-                    st.success("✅ 碎片录入成功！")
-                    
+                    if not os.getenv("OPENAI_API_KEY"):
+                        st.error("缺失大模型 API Key，无法进行内容清洗。")
+                    else:
+                        with st.spinner(f"正在爬取 {target_url} 的内容..."):
+                            try:
+                                headers = {'User-Agent': 'Mozilla/5.0'}
+                                response = requests.get(target_url, headers=headers, timeout=10)
+                                response.raise_for_status()
+                                
+                                soup = BeautifulSoup(response.text, 'html.parser')
+                                for script in soup(["script", "style", "nav", "footer"]):
+                                    script.decompose()
+                                
+                                raw_text = soup.get_text(separator=' ', strip=True)
+                                
+                                if len(raw_text) < 50:
+                                    st.error("该网页似乎限制了爬虫或内容过少，未能抓取到有效文本。")
+                                else:
+                                    st.success(f"✅ 网页爬取成功（共 {len(raw_text)} 字符）。正在交由 AI 进行知识萃取...")
+                                    
+                                    with st.spinner("🤖 AI 正在剥离废话，提取核心政策/情报..."):
+                                        prompt = f"""
+你是一个专业的出海合规与招聘情报提炼专家。我刚刚抓取了网页: {target_url}
+请从下面的【生肉文本】中，提取出针对【{region}】在【{category}】领域下的 1 到 3 条最核心干货规则。
+去除废话，用精炼的中文输出。如果没找到相关信息，请回答“提取失败”。
+
+【生肉文本(节选)】:
+{raw_text[:8000]}
+"""
+                                        
+                                        ai_result = agent.client.chat.completions.create(
+                                            model="deepseek-chat",
+                                            messages=[{"role": "user", "content": prompt}],
+                                            temperature=0.2
+                                        ).choices[0].message.content
+                                        
+                                        if "提取失败" in ai_result:
+                                            st.warning("AI 未能在该网页中找到有价值的情报。")
+                                        else:
+                                            tags = f"{region}, Auto-Harvested, {category.split(' ')[0]}"
+                                            km.add_fragment(region, category, ai_result, tags)
+                                            st.success("🎉 知识萃取成功！已自动存入底层数据库。")
+                                            st.info("提取到的精华内容如下：\n" + ai_result)
+                            except Exception as e:
+                                st.error(f"抓取网页时发生错误: {str(e)}")
+
         st.markdown("---")
-        st.markdown("### 🔄 编译与同步至 AI 引擎")
-        st.write("当您录入了一批新的经验后，请点击下方按钮，系统将把碎片整合为标准 Markdown 文档，供 RAG 引擎在【模块三】中搜索回答。")
-        if st.button("🚀 编译动态 Playbook 并更新向量库", type="primary", use_container_width=True):
-            with st.spinner("正在汇总碎片文件..."):
+        st.markdown("### 📝 方式二：人工补充 (备用)")
+        with st.expander("点击展开手工录入面板"):
+            with st.form("manual_fragment_form", clear_on_submit=True):
+                man_region = st.selectbox("区域", ["Singapore", "Malaysia", "South Africa", "Hong Kong", "Global/General"])
+                man_category = st.selectbox("分类", ["薪酬福利", "签证与合规", "本地猎头潜规则"])
+                man_content = st.text_area("具体经验", height=100)
+                if st.form_submit_button("保存"):
+                    if man_content.strip():
+                        km.add_fragment(man_region, man_category, man_content, "Manual")
+                        st.success("录入成功")
+
+    with col2:
+        st.markdown("### 🗂️ 知识库编译中心")
+        st.info("无论是 AI 网页爬虫还是人工录入获取的情报，都需要点击下方按钮进行统一编译。编译后，RAG 大脑才能读取到这些最新知识。")
+        
+        if st.button("🚀 编译 Playbook 并同步至 RAG 引擎", type="primary", use_container_width=True):
+            with st.spinner("正在将零散情报汇编为结构化 Markdown 库..."):
                 success = km.compile_to_markdown()
                 if success:
-                    st.success("✅ 动态 Playbook 已生成 (存放在 data/Alauda_Dynamic_Playbook.md)")
-                    st.info("💡 提示：前往【模块三】提问，AI 现在已经能读取到您刚刚输入的新规则了！")
+                    st.success("✅ 动态 Playbook 编译完成！您可以前往【模块五】进行智能问答了。")
                 else:
-                    st.warning("暂无数据可编译。")
-
-    with col2:
-        st.markdown("### 🗂️ 已沉淀的碎片一览")
+                    st.warning("目前数据库中没有任何情报。")
+                    
+        st.markdown("---")
         fragments = km.get_all_fragments()
-        
         if not fragments:
-            st.info("您的经验库目前为空。请在左侧表单开始录入您的第一个招聘踩坑记录。")
+            st.info("知识情报库目前为空。请在左侧输入网址让 AI 去收割。")
         else:
-            st.write(f"共沉淀了 **{len(fragments)}** 条经验规则：")
-            
-            # 使用一个滚动容器展示
-            with st.container(height=500):
+            st.write(f"当前库中共有 **{len(fragments)}** 条高价值情报：")
+            with st.container(height=450):
                 for f in fragments:
+                    tag_str = ", ".join(f.get('tags', []))
                     st.markdown(f"""
-                    <div style="background-color: #FFFFFF; padding: 15px; border-radius: 6px; border: 1px solid #E2E8F0; margin-bottom: 10px; border-left: 3px solid #004D99;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <strong>{f['region']} - {f['category']}</strong>
-                            <span style="color: #6B7280; font-size: 0.8em;">{f['date']}</span>
-                        </div>
-                        <p style="color: #4B5563; font-size: 0.9em; margin: 0;">{f['content']}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-
-elif page == "📄 模块三：简历智能初筛 (Resume Matcher)":
-    st.markdown('<div class="main-title">📄 猎头简历智能雷达 (Resume Matcher)</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-title">收到猎头推来的成堆简历？不用一份份看。AI 扮演严苛的技术面试官，为您一键挤出水分，标记红线。</div>', unsafe_allow_html=True)
-
-    default_jd_text = ""
-    if "generated_jd" in st.session_state:
-        default_jd_text = st.session_state["generated_jd"]
-        st.info("💡 系统已自动读取您在【模块一】生成的岗位画像作为比对标准。")
-    else:
-        st.warning("建议先去【模块一】生成岗位画像，或者在下方手动粘贴 JD 核心诉求。")
-
-    col1, col2 = st.columns([1, 1.2])
-
-    with col1:
-        st.markdown("### 1. 确认岗位测量标尺 (JD)")
-        jd_input = st.text_area("职位画像/核心挑战", value=default_jd_text, height=300)
-
-    with col2:
-        st.markdown("### 2. 批量上传猎头推荐的简历")
-        uploaded_files = st.file_uploader("可一次性拖入多份候选人简历 (PDF/TXT)", type=['pdf', 'txt'], accept_multiple_files=True)
-        
-        if uploaded_files:
-            st.write(f"共上传 {len(uploaded_files)} 份简历。")
-            
-            if st.button("⚖️ 启动批量硬核评估", type="primary", use_container_width=True):
-                if not os.getenv("OPENAI_API_KEY"):
-                    st.error("您尚未配置大模型 API Key。")
-                else:
-                    for idx, uploaded_file in enumerate(uploaded_files):
-                        st.markdown(f"#### 📄 候选人 {idx+1}: {uploaded_file.name}")
-                        with st.spinner(f"正在深度解析简历 {uploaded_file.name} ..."):
-                            file_bytes = uploaded_file.getvalue()
-                            resume_text = agent.extract_text_from_file(uploaded_file.name, file_bytes)
-                            
-                            if "文件解析失败" in resume_text:
-                                st.error(f"{uploaded_file.name} 提取失败: {resume_text}")
-                            else:
-                                with st.spinner(f"🤖 AI 面试官正在为 {uploaded_file.name} 挤水分..."):
-                                    evaluation_result = agent.evaluate_resume(jd_input, resume_text)
-                                    st.markdown(f'<div style="background-color: #FFFFFF; padding: 25px; border-radius: 8px; border: 1px solid #E5E7EB; border-left: 4px solid #004D99; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 2rem;">{evaluation_result}</div>', unsafe_allow_html=True)
-
-
+                    **[{f['region']}] {f['category']}** ({f['date']})  
+                    {f['content']}  
+                    *🏷️ {tag_str}*  
+                    ---
+                    """)
