@@ -210,6 +210,161 @@ class RecruitmentAgent:
 
     def evaluate_resume(self, jd_text, resume_text):
         """
+        将候选人简历与 JD 进行硬核比对，使用硬性算分卡 (Scoring Rubric) 防止评估漂移
+        """
+        if not self.client:
+            return "⚠️ 请在 .env 文件中配置 OPENAI_API_KEY"
+
+        prompt = f"""
+        你是一位极其严苛且极度客观的 Alauda (灵雀云) 全球顶尖技术面试官。
+        你的任务是审阅候选人简历，并严格对照 JD 进行量化初筛。
+
+        【职位核心诉求 (JD)】:
+        {jd_text}
+
+        【候选人简历 (Parsed Text)】:
+        {resume_text}
+
+        【强制量化算分卡 (Scoring Rubric)】:
+        为了保证评估的绝对客观，请严格按照以下三大维度进行数学加法算分，切勿凭感觉给总分：
+        1. 🎯 使命契合度 (Mission Match) - 满分 40 分
+           - 40分：完美拥有主导解决同类痛点（如替换竞品、主导千万级项目）的端到端经验。
+           - 20分：参与过类似项目，但并非主导者或经验略有偏差。
+           - 0分：完全没有相关商业打单或同等量级交付经验。
+        2. 💻 技术栈硬实力 (Tech Stack) - 满分 40 分
+           - 40分：精通 JD 要求的全部核心技术（特别是 K8s/云原生底层）。
+           - 20分：会用其中大部分技术，但停留在应用层/运维层，缺乏架构或源码级深度。
+           - 0分：技术栈严重不符。
+        3. 🚫 红线规避 (Deal Breaker) - 满分 20 分
+           - 20分：完全没有触犯任何红线（如：拥有 B2B 经验、英文极好等）。
+           - 0分：触犯了任何一条绝对红线（Deal Breaker 是有一票否决权的，只要触犯一项此处即为 0 分，并在下面预警）。
+
+        【输出要求】:
+        请严格按此结构输出，先给出各项得分的推导过程，再得出总分：
+        
+        ### 📊 结构化量化评估
+        - **总分**: [计算上述三项得分之和，满分 100]
+        - **得分拆解**:
+          - 使命契合度: [X] / 40 分 (理由：...)
+          - 技术栈硬实力: [X] / 40 分 (理由：...)
+          - 红线规避: [X] / 20 分 (理由：...)
+        - **定性结论**: (高度匹配 ≥80 / 勉强及格 60-79 / 严重不符 <60)
+
+        ### ✨ 核心亮点 (Highlights)
+        - 列出简历中最契合的 1-2 个闪光点。如果没有，直接写“无突出亮点”。
+
+        ### 🚨 红线与水分预警 (Red Flags)
+        - 明确指出是否触碰了 Deal Breakers（如果触碰了，必须强烈警告）。
+        - 挑出简历中用词含糊、可能存在过度包装的地方（例如只写了“管理”，没写“架构”）。
+
+        ### 🎯 初面查验建议 (Interview Probing)
+        - 针对上述“水分预警”或缺失的能力，提供 2 个极度犀利的电话初筛追问。
+        """
+
+        try:
+            response = self.client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.0, 
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"❌ 简历评估失败: {str(e)}"
+
+    def generate_outreach_message(self, jd_text, candidate_info):
+        """
+        基于 JD 和候选人背景，生成高转化率的触达文案 (Outreach Message)
+        """
+        if not self.client:
+            return "⚠️ 请在 .env 文件中配置 OPENAI_API_KEY"
+
+        prompt = f"""
+        你是一位顶级的国际科技猎头。你的任务是写一封极具转化率的【冷启动触达信 (Cold Outreach)】，吸引顶尖人才。
+
+        【职位背景 (JD)】:
+        {jd_text}
+
+        【候选人情报】:
+        {candidate_info}
+
+        【撰写要求】:
+        1. 拒绝传统的 HR 官话（如“我们在招人，你有兴趣吗”），采用 Alex Hormozi 的 Acquisition 风格：直接抛出巨大的价值主张和令其无法拒绝的挑战（比如颠覆行业巨头的机会）。
+        2. 高度个性化：必须巧妙地结合【候选人情报】，说明为什么偏偏找他/她。
+        3. 请提供两个版本：
+           - 版本 A: **邮件版 (Email)** - 结构清晰，有感染力，带明确的 Call to Action (CTA)。
+           - 版本 B: **LinkedIn InMail 版** - 极度简练，直击痛点，适合手机阅读（控制在 300 字以内）。
+        4. 语言：请使用非常地道、专业的商务英语 (Business English)，因为这是针对海外架构师的触达。
+        """
+
+        try:
+            response = self.client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"❌ 生成失败，错误信息: {str(e)}"
+
+    def answer_playbook_question(self, query, context_docs):
+        """
+        基于 RAG 检索到的文档片段（context_docs）回答用户问题
+        """
+        if not self.client:
+            return "⚠️ 请在 .env 文件中配置 OPENAI_API_KEY"
+
+        prompt = f"""
+        你现在是 Alauda 灵雀云的“全球招聘与雇主品牌智能顾问”。
+        请务必**仅基于**以下提供的《Alauda 全球招聘 Playbook》知识库片段来回答用户的问题。
+        如果提供的片段中没有包含答案，请明确告知“根据目前的 Playbook 手册，没有找到相关信息”，不要自己凭空编造。
+
+        【Playbook 知识片段】:
+        {context_docs}
+
+        【用户问题】:
+        {query}
+        
+        【回答要求】:
+        使用专业、有同理心的 HR BP 语气进行回答，并适当使用 Markdown 格式（如加粗、列表）使排版清晰。
+        """
+
+        try:
+            response = self.client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3, # 回答事实型问题，温度调低
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"❌ 检索问答失败，错误信息: {str(e)}"
+
+
+    def extract_text_from_file(self, file_name, file_bytes):
+        """解析上传的简历文件文本"""
+        try:
+            if file_name.lower().endswith('.pdf'):
+                reader = PdfReader(io.BytesIO(file_bytes))
+                text = ""
+                for page in reader.pages:
+                    text += page.extract_text() + "\n"
+                return text
+            elif file_name.lower().endswith('.txt'):
+                return file_bytes.decode('utf-8')
+            else:
+                return "Unsupported file format."
+        except Exception as e:
+            return f"文件解析失败: {str(e)}"
+
+    def evaluate_resume(self, jd_text, resume_text):
+        """
         将候选人简历与 JD 进行硬核比对，生成打分与红线预警
         """
         if not self.client:
