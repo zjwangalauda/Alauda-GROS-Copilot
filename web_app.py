@@ -715,9 +715,12 @@ elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
                 for f in fragments:
                     tag_str = ", ".join(f.get('tags', []))
                     st.markdown(f"""
-                    **[{f['region']}] {f['category']}** ({f['date']})  
-                    {f['content']}  
-                    *🏷️ {tag_str}*  
-                    ---
-                    """)
+                    <div style="background-color: #FFFFFF; padding: 15px; border-radius: 6px; border: 1px solid #E2E8F0; margin-bottom: 10px; border-left: 3px solid #004D99;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <strong>{f['region']} - {f['category']}</strong>
+                            <span style="color: #6B7280; font-size: 0.8em;">{f['date']}</span>
+                        </div>
+                        <p style="color: #4B5563; font-size: 0.9em; margin: 0;">{f['content']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
 # trigger rebuild
