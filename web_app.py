@@ -1,5 +1,7 @@
 import streamlit as st
 import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
@@ -639,7 +641,7 @@ elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
                         with st.spinner(f"正在爬取 {target_url} 的内容..."):
                             try:
                                 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8', 'Accept-Language': 'en-US,en;q=0.5'}
-                                response = requests.get(target_url, headers=headers, timeout=10)
+                                response = requests.get(target_url, headers=headers, timeout=10, verify=False)
                                 response.raise_for_status()
                                 
                                 soup = BeautifulSoup(response.text, 'html.parser')
