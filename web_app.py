@@ -671,30 +671,25 @@ elif page == "📄 模块三：简历智能初筛 (Resume Matcher)":
         jd_input = st.text_area("职位画像/核心挑战", value=default_jd_text, height=300)
 
     with col2:
-        st.markdown("### 2. 上传猎头推荐的简历")
-        uploaded_file = st.file_uploader("请上传候选人简历 (支持 PDF, TXT)", type=['pdf', 'txt'])
+        st.markdown("### 2. 批量上传猎头推荐的简历")
+        uploaded_files = st.file_uploader("可一次性拖入多份候选人简历 (PDF/TXT)", type=['pdf', 'txt'], accept_multiple_files=True)
         
-        if uploaded_file is not None:
-            file_details = {"文件名": uploaded_file.name, "文件大小": f"{uploaded_file.size / 1024:.1f} KB"}
-            st.write(file_details)
+        if uploaded_files:
+            st.write(f"共上传 {len(uploaded_files)} 份简历。")
             
-            if st.button("⚖️ 开始硬核评估打分", type="primary", use_container_width=True):
+            if st.button("⚖️ 启动批量硬核评估", type="primary", use_container_width=True):
                 if not os.getenv("OPENAI_API_KEY"):
                     st.error("您尚未配置大模型 API Key。")
                 else:
-                    with st.spinner(f"正在深度解析简历 {uploaded_file.name} ..."):
-                        # 提取文本
-                        file_bytes = uploaded_file.getvalue()
-                        resume_text = agent.extract_text_from_file(uploaded_file.name, file_bytes)
-                        
-                        if "文件解析失败" in resume_text:
-                            st.error(resume_text)
-                        else:
-                            st.success("✅ 简历内容提取成功，正在交由 AI 面试官进行红线扫描...")
+                    for idx, uploaded_file in enumerate(uploaded_files):
+                        st.markdown(f"#### 📄 候选人 {idx+1}: {uploaded_file.name}")
+                        with st.spinner(f"正在深度解析简历 {uploaded_file.name} ..."):
+                            file_bytes = uploaded_file.getvalue()
+                            resume_text = agent.extract_text_from_file(uploaded_file.name, file_bytes)
                             
-                            with st.spinner("🤖 AI 面试官正在交叉比对经历与 JD..."):
-                                evaluation_result = agent.evaluate_resume(jd_input, resume_text)
-                                
-                                st.markdown("---")
-                                st.markdown("### 🎯 评估诊断报告")
-                                st.markdown(f'<div style="background-color: #FFFFFF; padding: 30px; border-radius: 8px; border: 1px solid #E5E7EB; border-left: 4px solid #EF4444; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">{evaluation_result}</div>', unsafe_allow_html=True)
+                            if "文件解析失败" in resume_text:
+                                st.error(f"{uploaded_file.name} 提取失败: {resume_text}")
+                            else:
+                                with st.spinner(f"🤖 AI 面试官正在为 {uploaded_file.name} 挤水分..."):
+                                    evaluation_result = agent.evaluate_resume(jd_input, resume_text)
+                                    st.markdown(f'<div style="background-color: #FFFFFF; padding: 25px; border-radius: 8px; border: 1px solid #E5E7EB; border-left: 4px solid #004D99; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 2rem;">{evaluation_result}</div>', unsafe_allow_html=True)
