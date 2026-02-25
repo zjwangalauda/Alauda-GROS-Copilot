@@ -610,14 +610,14 @@ elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
             # 提供权威信息源快捷下拉填充
             official_urls = {
                 "自定义输入 (或直接在下方粘贴 URL)": "",
-                "🇸🇬 新加坡人力部 (MOM) - EP 签证政策": "https://www.mom.gov.sg/passes-and-visas/employment-pass",
-                "🇸🇬 新加坡 CPF (公积金) 缴费费率指南": "https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay",
-                "🇲🇾 马来西亚官方劳工法 (Employment Act) 解析": "https://www.talentcorp.com.my/resources/employment-act-1955-amendments",
-                "🇲🇾 马来西亚 MDEC 外籍专才签证申请指南": "https://mdec.my/foreign-knowledge-worker",
-                "🇭🇰 香港入境事务处 - 优秀人才入境计划": "https://www.immd.gov.hk/hks/services/visas/quality_migrant_admission_scheme.html",
-                "🇭🇰 香港劳工处 - 雇佣条例 (工资与终止雇佣)": "https://www.labour.gov.hk/tc/public/ConciseGuide.htm",
-                "🇿🇦 南非内政部 - 关键技能工作签证指南": "http://www.dha.gov.za/index.php/immigration-services/critical-skills-work-visa",
-                "🇿🇦 南非基本雇佣条件法 (BCEA) 概述": "https://www.labour.gov.za/DocumentCenter/Publications/Basic%20Conditions%20of%20Employment/Basic%20Guide%20to%20Working%20Hours.pdf"
+                "🇸🇬 新加坡 EP 签证 COMPASS 计分制 (解析版)": "https://sg.acclime.com/guides/singapore-employment-pass/",
+                "🇸🇬 新加坡 CPF (公积金) 费率政策 (普华永道解析)": "https://taxsummaries.pwc.com/singapore/individual/other-taxes",
+                "🇲🇾 马来西亚最新劳工法修正案 (法律解析)": "https://www.taypartners.com.my/employment-act-1955-key-amendments-2023/",
+                "🇲🇾 马来西亚外籍专才 EP 签证申请指南": "https://www.paulhypepage.my/guide/malaysia-employment-pass/",
+                "🇭🇰 香港“高才通”与专才签证对比 (毕马威指南)": "https://www.pwccn.com/zh/services/tax/publications/tax-news-mar2024-1.html",
+                "🇭🇰 香港雇佣条例与解雇规定 (Deacons)": "https://www.deacons.com/zh-hant/news-and-insights/publications/employment-law-in-hong-kong-frequently-asked-questions/",
+                "🇿🇦 南非外籍关键技能签证 (Critical Skills) 解析": "https://www.xpatweb.com/south-africa-critical-skills-visa/",
+                "🇿🇦 南非解雇与劳动法实务 (Bowmans)": "https://www.bowmanslaw.com/insights/employment/south-africa-terminating-employment/"
             }
             
             selected_preset = st.selectbox("💡 快速选择官方信息源 (自动填充链接)", list(official_urls.keys()))
@@ -638,7 +638,7 @@ elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
                     else:
                         with st.spinner(f"正在爬取 {target_url} 的内容..."):
                             try:
-                                headers = {'User-Agent': 'Mozilla/5.0'}
+                                headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8', 'Accept-Language': 'en-US,en;q=0.5'}
                                 response = requests.get(target_url, headers=headers, timeout=10)
                                 response.raise_for_status()
                                 
