@@ -607,7 +607,23 @@ elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
     with col1:
         st.markdown("### 🕸️ 方式一：AI 网页情报自动抓取")
         with st.form("auto_harvester_form", clear_on_submit=True):
-            target_url = st.text_input("🔗 输入目标网页 URL", placeholder="例如: https://www.mom.gov.sg/passes-and-visas/employment-pass")
+            # 提供权威信息源快捷下拉填充
+            official_urls = {
+                "自定义输入 (或直接在下方粘贴 URL)": "",
+                "🇸🇬 新加坡人力部 (MOM) - EP 签证政策": "https://www.mom.gov.sg/passes-and-visas/employment-pass",
+                "🇸🇬 新加坡 CPF (公积金) 缴费费率指南": "https://www.cpf.gov.sg/employer/employer-obligations/how-much-cpf-contributions-to-pay",
+                "🇲🇾 马来西亚官方劳工法 (Employment Act) 解析": "https://www.talentcorp.com.my/resources/employment-act-1955-amendments",
+                "🇲🇾 马来西亚 MDEC 外籍专才签证申请指南": "https://mdec.my/foreign-knowledge-worker",
+                "🇭🇰 香港入境事务处 - 优秀人才入境计划": "https://www.immd.gov.hk/hks/services/visas/quality_migrant_admission_scheme.html",
+                "🇭🇰 香港劳工处 - 雇佣条例 (工资与终止雇佣)": "https://www.labour.gov.hk/tc/public/ConciseGuide.htm",
+                "🇿🇦 南非内政部 - 关键技能工作签证指南": "http://www.dha.gov.za/index.php/immigration-services/critical-skills-work-visa",
+                "🇿🇦 南非基本雇佣条件法 (BCEA) 概述": "https://www.labour.gov.za/DocumentCenter/Publications/Basic%20Conditions%20of%20Employment/Basic%20Guide%20to%20Working%20Hours.pdf"
+            }
+            
+            selected_preset = st.selectbox("💡 快速选择官方信息源 (自动填充链接)", list(official_urls.keys()))
+            default_url = official_urls[selected_preset]
+            
+            target_url = st.text_input("🔗 目标网页 URL", value=default_url, placeholder="或在此处直接粘贴任何网页链接...")
             region = st.selectbox("归属区域", ["Singapore", "Malaysia", "South Africa", "Middle East", "Global/General"])
             category = st.selectbox("情报分类", ["官方政策法规 (Official Law)", "薪酬与竞品情报 (Market Intel)", "签证与工作许可 (Visa/EP)", "其他避雷指南"])
             

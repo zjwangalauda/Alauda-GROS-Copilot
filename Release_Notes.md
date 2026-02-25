@@ -1,5 +1,5 @@
 # Alauda Global Recruitment OS (GROS) Copilot
-## v1.3.1 Release Notes
+## v1.4.0 Release Notes
 **Release Date:** 2026-02-25
 
 ### 🌟 Overview (System Overview)
@@ -25,7 +25,8 @@ Alauda GROS Copilot 是一款将灵雀云《全球技术精英招聘操作系统
 - 自动提取关键维度，生成带 1-5 分严格定义标准的【行为锚定评分卡 (BARS)】以及 STAR 题库，统一全球面试官的评价口径。
 
 #### 5. 知识库自生长与 RAG 智库 (Module 5 & 6)
-- **从 0 到 1 破除冷启动**：HR 随手录入碎片化踩坑经验（如特定国家签证合规底线），系统自动汇编并将其动态向量化（Dynamic RAG）。结合预置的大量真实出海合规干货，实现精准的混合检索问答溯源，杜绝 AI 幻觉。
+- **破除冷启动：全自动网页情报收割机 (Web Auto-Harvester)** *[NEW in v1.4.0]*：彻底淘汰传统的手工录入模式。HR 只需粘贴网页链接（内置新加坡 MOM、马来西亚劳工部等权威源快捷选项），AI 爬虫即可瞬间提取长篇外文网页，剥离废话，精准萃取当地签证底线、公积金比例等合规红线，一键编译为动态 Markdown 入库。
+- **混合检索问答 (Dynamic RAG)**：结合旧版静态 PDF 与自动收割的最新情报，实现精准的混合检索问答溯源，杜绝 AI 幻觉。
 
 ### 🛠️ Technical Architecture & Deployment (架构与部署)
 - **前端交互框架**：基于 Streamlit 构建，完美白底蓝调企业级 UI，内置一键缓存强刷机制。
