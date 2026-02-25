@@ -258,10 +258,10 @@ with st.sidebar:
             "📋 模块零：HC 业务需求审批",
             "🎯 模块一：JD 逆向与自动寻源", 
             "✉️ 模块二：自动化触达 (Outreach)",
-            "📝 模块三：结构化面试打分卡",
-            "📚 模块四：Playbook 智库问答",
-            "🏗️ 模块五：知识库自生长 (0-to-1)",
-            "📄 模块六：简历智能初筛 (Resume Matcher)"
+            "📄 模块三：简历智能初筛 (Resume Matcher)",
+            "📝 模块四：结构化面试打分卡",
+            "📚 模块五：Playbook 智库问答",
+            "🏗️ 模块六：知识库自生长 (0-to-1)"
         ],
         label_visibility="collapsed" 
     )
@@ -490,7 +490,7 @@ elif page == "✉️ 模块二：自动化触达 (Outreach)":
                 st.markdown(f'<div style="background-color: #FFFFFF; padding: 30px; border-radius: 8px; border: 1px solid #E5E7EB;">{outreach_result}</div>', unsafe_allow_html=True)
 
 
-elif page == "📝 模块三：结构化面试打分卡":
+elif page == "📝 模块四：结构化面试打分卡":
     st.markdown('<div class="main-title">📝 结构化面试评估系统</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">消除面试过程中的主观偏见。基于 JD 自动提取关键维度，生成【行为锚定评分卡 (Scorecard)】与【STAR 题库】。</div>', unsafe_allow_html=True)
     
@@ -523,7 +523,7 @@ elif page == "📝 模块三：结构化面试打分卡":
                         mime="text/markdown",
                     )
 
-elif page == "📚 模块四：Playbook 智库问答":
+elif page == "📚 模块五：Playbook 智库问答":
     st.markdown('<div class="main-title">📚 灵雀云出海智库 AI 助手</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">基于 RAG 检索增强技术。您可以随时询问关于本地化合规、出海战略指导手册、雇主品牌沟通话术等内容。</div>', unsafe_allow_html=True)
     
@@ -589,7 +589,7 @@ elif page == "📚 模块四：Playbook 智库问答":
                         
             st.session_state.messages.append({"role": "assistant", "content": response})
 
-elif page == "🏗️ 模块五：知识库自生长 (0-to-1)":
+elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
     st.markdown('<div class="main-title">🏗️ 知识库自生长 (Knowledge Builder)</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">解决“没有现成的手册怎么办”的问题。在招聘实战中将零散的踩坑经验碎片化录入，系统将自动汇编、向量化，形成企业专属动态 Playbook。</div>', unsafe_allow_html=True)
 
@@ -648,7 +648,7 @@ elif page == "🏗️ 模块五：知识库自生长 (0-to-1)":
                     """, unsafe_allow_html=True)
 
 
-elif page == "📄 模块六：简历智能初筛 (Resume Matcher)":
+elif page == "📄 模块三：简历智能初筛 (Resume Matcher)":
     st.markdown('<div class="main-title">📄 猎头简历智能雷达 (Resume Matcher)</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">收到猎头推来的成堆简历？不用一份份看。AI 扮演严苛的技术面试官，为您一键挤出水分，标记红线。</div>', unsafe_allow_html=True)
 
