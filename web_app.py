@@ -9,6 +9,7 @@ load_dotenv(override=True)
 from recruitment_agent import RecruitmentAgent
 from knowledge_manager import KnowledgeManager
 from hc_manager import HCManager
+from agent_orchestrator import MultiAgentOrchestrator
 
 # 1. 页面级基础设置 (支持浅色模式，并且占满全宽)
 st.set_page_config(
@@ -261,7 +262,8 @@ with st.sidebar:
             "📄 模块三：简历智能初筛 (Resume Matcher)",
             "📝 模块四：结构化面试打分卡",
             "📚 模块五：Playbook 智库问答",
-            "🏗️ 模块六：知识库自生长 (0-to-1)"
+            "🏗️ 模块六：知识库自生长 (0-to-1)",
+            "🤖 模块七：AI猎头编排网络 (试运行)"
         ],
         label_visibility="collapsed"
     )
@@ -693,3 +695,50 @@ elif page == "📄 模块三：简历智能初筛 (Resume Matcher)":
                                 with st.spinner(f"🤖 AI 面试官正在为 {uploaded_file.name} 挤水分..."):
                                     evaluation_result = agent.evaluate_resume(jd_input, resume_text)
                                     st.markdown(f'<div style="background-color: #FFFFFF; padding: 25px; border-radius: 8px; border: 1px solid #E5E7EB; border-left: 4px solid #004D99; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 2rem;">{evaluation_result}</div>', unsafe_allow_html=True)
+
+
+elif page == "🤖 模块七：AI猎头编排网络 (试运行)":
+    st.markdown('<div class="main-title">🤖 AI 猎头团队全网寻源编排网络 (Multi-Agent Team)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">【实验性架构演示】展现系统从“单体助手”向“多智能体协同 (Orchestrator)”演进的能力。模拟三个 Agent（搜寻者、分析师、文案师）组成的虚拟黑客猎头团队流水线。</div>', unsafe_allow_html=True)
+    
+    default_jd_text = st.session_state.get("generated_jd", "寻找驻新加坡的资深出海售前架构师，懂 Kubernetes 和 Go，需主导对标 OpenShift 的千万级项目交付。")
+    
+    col1, col2 = st.columns([1, 1.5])
+    
+    with col1:
+        st.markdown("### 🎯 作战目标 (JD 上下文)")
+        st.text_area("当前团队正在寻猎的标准", value=default_jd_text, height=200, disabled=True)
+        start_btn = st.button("🚀 启动 Multi-Agent 虚拟猎头团队", type="primary", use_container_width=True)
+        
+        st.markdown("---")
+        st.markdown("#### ⚙️ 编排逻辑说明")
+        st.markdown('''
+        1. **Agent A (Crawler)**: 自动将 JD 转化为查询图谱，扫描全网开源社区 (GitHub/StackOverflow)。
+        2. **Agent B (Evaluator)**: 接收 A 的粗筛数据，用大模型进行严格的 JD 吻合度交叉对比，剔除水货。
+        3. **Agent C (Copywriter)**: 根据最终存活的候选人开源痕迹（如 Star 最高的仓库语言），进行极度针对性的极客术语破冰撰写。
+        ''')
+
+    with col2:
+        st.markdown("### 📡 Orchestrator 编排日志")
+        log_container = st.empty()
+        
+        if start_btn:
+            if not os.getenv("OPENAI_API_KEY"):
+                st.error("缺失 API Key。")
+            else:
+                orchestrator = MultiAgentOrchestrator()
+                logs = []
+                
+                # 定义推流回调
+                def push_log(msg):
+                    logs.append(msg)
+                    formatted_logs = "\n\n".join([f"> {l}" for l in logs])
+                    log_container.markdown(f'<div style="background-color: #1E293B; color: #10B981; padding: 20px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; height: 350px; overflow-y: auto;">{formatted_logs}</div>', unsafe_allow_html=True)
+                
+                with st.spinner("调度器 (Orchestrator) 正在唤醒 Agent 团队..."):
+                    results = orchestrator.run_sourcing_pipeline(default_jd_text, push_log)
+                
+                st.markdown("### 🏆 猎头团队最终交付物")
+                for res in results:
+                    st.markdown(f"**致候选人 {res['candidate']} 的一击必杀邮件：**")
+                    st.info(res['message'])
