@@ -8,6 +8,7 @@ load_dotenv(override=True)
 
 from recruitment_agent import RecruitmentAgent
 from knowledge_manager import KnowledgeManager
+from hc_manager import HCManager
 
 # 1. 页面级基础设置 (支持浅色模式，并且占满全宽)
 st.set_page_config(
@@ -254,6 +255,7 @@ with st.sidebar:
         "选择要执行的任务：",
         [
             "🏠 首页：全流程作战大盘", 
+            "📋 模块零：HC 业务需求审批",
             "🎯 模块一：JD 逆向与自动寻源", 
             "✉️ 模块二：自动化触达 (Outreach)",
             "📝 模块三：结构化面试打分卡",
@@ -312,28 +314,117 @@ if page == "🏠 首页：全流程作战大盘":
         </div>
         """, unsafe_allow_html=True)
 
+
+elif page == "📋 模块零：HC 业务需求审批":
+    st.markdown('<div class="main-title">📋 业务线 HC 需求提报与审批</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">打造业务部门与 HR 的协同桥梁。业务方在此提报人才需求，HR 审批通过后自动流转至“JD 生成与寻源”模块。</div>', unsafe_allow_html=True)
+
+    hc_mgr = HCManager()
+    
+    tab1, tab2 = st.tabs(["📤 我是业务：提报新 HC", "✅ 我是 HR：审批 HC 需求"])
+    
+    with tab1:
+        st.markdown("### 业务线需求申请表")
+        st.markdown("请用大白话描述你要解决的业务问题，不需要你写专业的 JD，系统后续会自动帮你写。")
+        with st.form("hc_request_form", clear_on_submit=True):
+            col_a, col_b = st.columns(2)
+            with col_a:
+                department = st.selectbox("需求部门", ["海外出海战略部", "云原生研发中心", "全球交付交付中心", "其他支持部门"])
+                role_title = st.text_input("岗位名称 (俗称即可)", placeholder="比如：新加坡懂K8s的售前")
+                location = st.text_input("工作地点", placeholder="Singapore / Remote")
+            with col_b:
+                urgency = st.select_slider("紧急程度", options=["🔥 不急", "🔥🔥 正常", "🔥🔥🔥 极其紧急 (项目等米下锅)"])
+                
+            mission = st.text_area("1️⃣ 核心使命 (入职第一年要解决什么最大的麻烦？) *", placeholder="比如：搞定两个当地金融客户的 OpenShift 替换项目...", height=80)
+            tech_stack = st.text_input("2️⃣ 必须掌握的核心技术 (逗号分隔) *", placeholder="Kubernetes, Go, AWS")
+            deal_breakers = st.text_input("3️⃣ 绝对不能接受的特质 (红线)", placeholder="英文不行、不能出差")
+            selling_point = st.text_input("4️⃣ 你能给候选人画什么饼 (核心卖点)", placeholder="跟着我打天下，提成不设上限")
+            
+            submit_hc = st.form_submit_button("🚀 提交 HC 申请", type="primary")
+            if submit_hc:
+                if not role_title or not mission or not tech_stack:
+                    st.error("请完整填写标有 * 的必填项！")
+                else:
+                    hc_mgr.submit_request(department, role_title, location, urgency, mission, tech_stack, deal_breakers, selling_point)
+                    st.success(f"✅ HC 申请已提交！等待 HR BP 审批。")
+
+    with tab2:
+        st.markdown("### HR BP 审批工作台")
+        requests = hc_mgr.get_all_requests()
+        if not requests:
+            st.info("当前没有任何 HC 申请。")
+        else:
+            for req in requests:
+                status_color = "#F59E0B" if req['status'] == "Pending" else ("#10B981" if req['status'] == "Approved" else "#EF4444")
+                status_icon = "⏳ 待审批" if req['status'] == "Pending" else ("✅ 已批准" if req['status'] == "Approved" else "❌ 已驳回")
+                
+                with st.expander(f"{req['date']} | {req['department']} - {req['role_title']} [{status_icon}]"):
+                    st.markdown(f"**地点**: {req['location']} &nbsp;&nbsp;|&nbsp;&nbsp; **紧急度**: {req['urgency']}")
+                    st.markdown(f"**使命**: {req['mission']}")
+                    st.markdown(f"**技术栈**: {req['tech_stack']}")
+                    st.markdown(f"**红线**: {req['deal_breakers']} &nbsp;&nbsp;|&nbsp;&nbsp; **卖点**: {req['selling_point']}")
+                    
+                    if req['status'] == "Pending":
+                        c1, c2 = st.columns([1, 10])
+                        with c1:
+                            if st.button("批准", key=f"approve_{req['id']}", type="primary"):
+                                hc_mgr.update_status(req['id'], "Approved")
+                                st.rerun()
+                        with c2:
+                            if st.button("驳回", key=f"reject_{req['id']}"):
+                                hc_mgr.update_status(req['id'], "Rejected")
+                                st.rerun()
+
 elif page == "🎯 模块一：JD 逆向与自动寻源":
     st.markdown('<div class="main-title">🎯 JD 逆向工程与自动化寻源</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-title">输入精准画像，AI 将自动输出“高转化率的职位描述 (JD)”与“Google X-Ray 自动化寻源代码”。</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">承接业务线的 HC 需求，AI 将自动输出“高转化率的职位描述 (JD)”与“Google X-Ray 自动化寻源代码”。</div>', unsafe_allow_html=True)
     
+    hc_mgr = HCManager()
+    approved_hcs = hc_mgr.get_approved_requests()
+    
+    # 构造下拉列表选项
+    hc_options = ["— 手动创建新职位 (不关联 HC) —"]
+    hc_mapping = {}
+    for hc in approved_hcs:
+        label = f"[{hc['department']}] {hc['role_title']} ({hc['location']})"
+        hc_options.append(label)
+        hc_mapping[label] = hc
+        
+    st.markdown("### 选择业务线已批准的 HC 需求")
+    selected_hc_label = st.selectbox("流转来源", hc_options)
+    
+    # 如果选择了某个 HC，自动填充默认值
+    def_role = "Global Presales Architect (售前架构师)"
+    def_loc = "Singapore / Remote APAC"
+    def_mission = "入职第一年必须完成的 3 个关键任务是什么？\n例：主导 2 个千万级金融客户的 OpenShift 替代方案打单；建立一套标准化英文交付材料。"
+    def_tech = "Kubernetes, Docker, CI/CD, Go/Python, AWS/Azure"
+    def_breakers = "绝对不能接受的特质。例：无法流畅进行全英文技术路演；没有 ToB 软件企业级服务经验。"
+    def_selling = "为什么顶级人才要离开现在的舒适区来 Alauda？\n例：云原生出海红利期，直接挑战 Red Hat 的产品力，无天花板的薪酬体系。"
+    
+    if selected_hc_label != "— 手动创建新职位 (不关联 HC) —":
+        hc_data = hc_mapping[selected_hc_label]
+        def_role = hc_data['role_title']
+        def_loc = hc_data['location']
+        def_mission = hc_data['mission']
+        def_tech = hc_data['tech_stack']
+        def_breakers = hc_data['deal_breakers']
+        def_selling = hc_data['selling_point']
+        st.info(f"💡 已自动为您填入业务线提交的原始需求信息，您可以作为 HR 进行进一步的专业润色后再生成 JD。")
+
     with st.form("jd_calibration_form", clear_on_submit=False):
         st.markdown("### The Calibration Protocol (精准画像输入协议)")
-        st.markdown("请填写以下清单。这不仅是一份 JD，更是用来“拷问”业务部门核心诉求的逆向工程工具。")
         
         col1, col2 = st.columns(2)
         with col1:
-            role_title = st.text_input("招聘岗位头衔", value="Global Presales Architect (售前架构师)")
-            location = st.text_input("目标工作地点", value="Singapore / Remote APAC")
-            mission = st.text_area("1️⃣ The Mission (核心使命) *", 
-                                  value="入职第一年必须完成的 3 个关键任务是什么？\n例：主导 2 个千万级金融客户的 OpenShift 替代方案打单；建立一套标准化英文交付材料。", height=120)
+            role_title = st.text_input("招聘岗位头衔", value=def_role)
+            location = st.text_input("目标工作地点", value=def_loc)
+            mission = st.text_area("1️⃣ The Mission (核心使命) *", value=def_mission, height=120)
             
         with col2:
-            tech_stack = st.text_input("2️⃣ The Tech Stack (必须技术栈) *", value="Kubernetes, Docker, CI/CD, Go/Python, AWS/Azure")
-            deal_breakers = st.text_area("3️⃣ The Deal Breakers (绝对红线) *", 
-                                        value="绝对不能接受的特质。例：无法流畅进行全英文技术路演；没有 ToB 软件企业级服务经验。", height=120)
+            tech_stack = st.text_input("2️⃣ The Tech Stack (必须技术栈) *", value=def_tech)
+            deal_breakers = st.text_area("3️⃣ The Deal Breakers (绝对红线) *", value=def_breakers, height=120)
             
-        selling_point = st.text_area("4️⃣ The Selling Point (核心卖点 / Alauda 优势)", 
-                                     value="为什么顶级人才要离开现在的舒适区来 Alauda？\n例：云原生出海红利期，直接挑战 Red Hat 的产品力，无天花板的薪酬体系。", height=80)
+        selling_point = st.text_area("4️⃣ The Selling Point (核心卖点 / Alauda 优势)", value=def_selling, height=80)
         
         submitted = st.form_submit_button("🚀 运行系统：一键生成 JD 与寻源方案", type="primary", use_container_width=True)
         

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "HC_20260225151422",
+    "date": "2026-02-25",
+    "department": "全球交付交付中心",
+    "role_title": "Technical Service Manager（TSM）",
+    "location": "新加坡",
+    "urgency": "🔥🔥🔥 极其紧急 (项目等米下锅)",
+    "mission": "1.负责跨国、多集群环境下的容器平台架构设计与实施\n2.协助客户将OCP中的应用迁移至ACP\n3.负责 Day 2 Operations，包括集群深度监控（Prometheus/Grafana）、日志管理和性能调优\n4. 负责平台的加固与合规检查（CIS Benchmark）\n5.负责规划并执行集群的无损升级（Zero-downtime Upgrade）及灾备（DR）演练\n6.负责在发生事故时，能快速进行 RCA（Root Cause Analysis），并推动产品研发进行补丁修复",
+    "tech_stack": "Kubernetes, K8s, CKA,CKS,OpenShift, OCP, Docker,Linux (RHEL/CentOS), Bare Metal, VMware,Ansible, Terraform, Git, CI/CD,Istio, Service Mesh, F5, Load Balancer",
+    "deal_breakers": "英语不行，不接受出差，不接受远程协作",
+    "selling_point": "客户专业，前沿技术",
+    "status": "Approved"
+  },
+  {
+    "id": "HC_20260225152302",
+    "date": "2026-02-25",
+    "department": "全球交付交付中心",
+    "role_title": "Delivery Consultant（DC）",
+    "location": "马来西亚",
+    "urgency": "🔥🔥🔥 极其紧急 (项目等米下锅)",
+    "mission": "1.负责区域内新项目的从 0 到 1 部署、架构调优及复杂故障排查、用户服务和培训\n2.负责类 ACP容器云平台在客户环境（裸金属、私有云或混合云）的安装、配置与集成\n3.为海外客户提供云原生架构建议，包括微服务拆分、CI/CD 流水线设计及安全性增强\n4.能够接受区域内（如东南亚内）的差旅，快速响应客户现场的紧急需求",
+    "tech_stack": "Kubernetes, K8s, CKA,CKS,OpenShift, OCP, Docker,Linux (RHEL/CentOS), Bare Metal, VMware,Ansible, Terraform, Git, CI/CD,Istio, Service Mesh, F5, Load Balancer",
+    "deal_breakers": "英语不行，不接受出差，不接受远程办公",
+    "selling_point": "培训完备，客户专业，前沿技术",
+    "status": "Approved"
+  }
+]
