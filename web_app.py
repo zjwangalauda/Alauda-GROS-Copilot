@@ -10,6 +10,12 @@ import pandas as pd
 # 强制覆盖环境变量
 load_dotenv(override=True)
 
+# Streamlit Cloud 部署时通过 Secrets 注入 LLM 凭据（本地开发走 .env）
+for key in ["OPENAI_API_KEY", "OPENAI_API_BASE", "LLM_MODEL"]:
+    val = st.secrets.get(key, "")
+    if val and not os.environ.get(key):
+        os.environ[key] = val
+
 from recruitment_agent import RecruitmentAgent
 from knowledge_manager import KnowledgeManager
 from hc_manager import HCManager
@@ -666,7 +672,7 @@ elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
 """
                                         
                                         ai_result = agent.client.chat.completions.create(
-                                            model="deepseek-chat",
+                                            model=agent.model,
                                             messages=[{"role": "user", "content": prompt}],
                                             temperature=0.2
                                         ).choices[0].message.content

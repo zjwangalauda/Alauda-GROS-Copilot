@@ -12,6 +12,7 @@ class RecruitmentAgent:
         # 强制从系统环境变量（即我们的 .env）读取，防止被全局的 ollama 干扰
         self.api_key = os.environ.get("OPENAI_API_KEY")
         self.base_url = os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1")
+        self.model = os.environ.get("LLM_MODEL", "deepseek-chat")
         
         # 暂时用 Dummy Client，等你填入 Key 后生效
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url) if self.api_key else None
@@ -70,7 +71,7 @@ class RecruitmentAgent:
 
         try:
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=self.model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": prompt}
@@ -107,7 +108,7 @@ class RecruitmentAgent:
 
         try:
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=self.model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": prompt}
@@ -146,7 +147,7 @@ class RecruitmentAgent:
 
         try:
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=self.model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": prompt}
@@ -181,7 +182,7 @@ class RecruitmentAgent:
 
         try:
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=self.model,
                 messages=[
                     {"role": "user", "content": prompt}
                 ],
@@ -263,7 +264,7 @@ class RecruitmentAgent:
 
         try:
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=self.model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": prompt}
@@ -301,7 +302,7 @@ class RecruitmentAgent:
 
         try:
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=self.model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": prompt}
@@ -336,7 +337,7 @@ class RecruitmentAgent:
 
         try:
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=self.model,
                 messages=[
                     {"role": "user", "content": prompt}
                 ],
@@ -400,7 +401,7 @@ class RecruitmentAgent:
 
         try:
             response = self.client.chat.completions.create(
-                model="deepseek-chat",
+                model=self.model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": prompt}
