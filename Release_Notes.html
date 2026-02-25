@@ -21,45 +21,40 @@
 <body>
     <div class="container">
         <h1>Alauda Global Recruitment OS (GROS) Copilot</h1>
-<h2>v1.3.0 Release Notes</h2>
+<h2>v1.3.1 Release Notes</h2>
 <p><strong>Release Date:</strong> 2026-02-25</p>
 <h3>🌟 Overview (System Overview)</h3>
 <p>Alauda GROS Copilot 是一款将灵雀云《全球技术精英招聘操作系统》静态方法论全面智能化的 AI 招聘工作台。该系统通过先进的生成式 AI 技术（Generative AI）和检索增强生成（RAG），帮助业务主管与 HR 在出海招聘中实现“流水线式精准捕获”。</p>
-<p>这不是一个简单的“写职位描述”的工具，而是一个<strong>固化了顶级猎头与前沿组织设计方法论的“企业出海招聘引擎”</strong>。目前，系统已成功部署至云端，实现 7x24 小时全球可用，并在全新版本中彻底打通了“业务线需求 -&gt; JD 生成 -&gt; 简历智能初筛 -&gt; 面试官赋能”的闭环。</p>
+<p>这不是一个简单的“写职位描述”的工具，而是一个<strong>固化了顶级猎头与前沿组织设计方法论的“企业级出海招聘引擎”</strong>。目前，系统已成功部署至云端，实现 7x24 小时全球可用，彻底打通了“业务线需求 -&gt; JD 生成 -&gt; 自动化触达 -&gt; 简历智能初筛 -&gt; 面试官赋能 -&gt; 知识库沉淀”的生产级闭环。</p>
 <h3>🚀 Key Features (核心功能模块)</h3>
-<h4>1. 业务线 HC 需求提报与流转审批 (Module 0)</h4>
+<h4>0. 业务线 HC 需求提报与流转审批 (Module 0)</h4>
 <ul>
-<li><strong>打破部门壁垒</strong>：业务线主管只需用大白话填入“核心挑战”和“业务红线”即可提交 headcount (HC) 申请。</li>
-<li><strong>HRBP 在线审批工作台</strong>：HRBP 拥有独立视角，可以对业务提交的 HC 申请进行一键批准或驳回。</li>
+<li>彻底颠覆口头沟通。业务线主管只需用大白话填入“核心挑战”和“业务红线”即可提交 headcount (HC) 申请。数据流自动穿透至后续 AI 引擎。</li>
 </ul>
-<h4>2. JD 逆向工程与自动化寻源引擎 (Module 1)</h4>
+<h4>1. JD 逆向工程与自动化寻源引擎 (Module 1)</h4>
 <ul>
-<li><strong>精准画像输入协议 (Calibration Protocol)</strong>：通过四维业务拷问倒推候选人真实画像，并自动承接被批准的 HC 信息。</li>
-<li><strong>高转化率 JD 生成与寻源外挂</strong>：一键生成高级英文职位描述，并输出针对 LinkedIn, GitHub 深度检索的布尔逻辑搜索代码。</li>
+<li>通过四维业务拷问倒推候选人真实画像，一键生成重点突出 Alauda 战略高度的高级英文职位描述，并输出用于 Google X-Ray 深度检索的布尔逻辑代码。</li>
 </ul>
-<h4>3. 自动化触达引擎 (Module 2: Outreach)</h4>
+<h4>2. 自动化触达引擎 (Module 2: Outreach)</h4>
 <ul>
-<li><strong>拒绝无效破冰</strong>：采用 Alex Hormozi 的 Acquisition 营销框架，根据候选人的特定背景生成直击痛点的邮件（Email）与领英短文（InMail）。</li>
+<li>摒弃废话模板，采用 Alex Hormozi 的 Acquisition 营销框架，根据候选人的特定背景生成直击痛点的高级破冰邮件与 InMail。</li>
 </ul>
-<h4>4. 猎头简历智能雷达 (Module 3: Resume Matcher) <em>[NEW in v1.3.0]</em></h4>
+<h4>3. 猎头简历智能雷达 (Module 3: Resume Matcher)</h4>
 <ul>
-<li><strong>一键脱水挤分</strong>：HR 收到的海量外部渠道简历（PDF/TXT）可直接上传。系统内置底层文本解析器（PyPDF）。</li>
-<li><strong>极度严苛的 AI 考官</strong>：系统会自动抓取当前职位的 JD，让 AI 扮演严苛的技术面试官与候选人的简历进行深度“硬核交叉比对”。</li>
-<li><strong>四维诊断报告</strong>：瞬间输出 [0-100的匹配度打分]、[核心亮点]、[红线与造假预警] 以及专为该候选人定制的 [初面电话查验犀利追问]。</li>
+<li><strong>硬性数学算分卡防御模型</strong>：AI 面试官在后台执行 <code>Temperature=0.0</code> 的绝对客观推理，将定性评估转为纯粹的“维度减法”，彻底消除大模型的“打分漂移（Evaluation Drift）”。精准剥离简历水分并生成电话查验追问。</li>
 </ul>
-<h4>5. 结构化面试评估系统 (Module 4)</h4>
+<h4>4. 结构化面试评估系统 (Module 4)</h4>
 <ul>
-<li><strong>统一全球面试“度量衡”</strong>：基于生成的 JD 自动拆解并输出可量化的“行为锚定评分卡（BARS Scorecard）”，消除考官的主观偏见。</li>
+<li>自动提取关键维度，生成带 1-5 分严格定义标准的【行为锚定评分卡 (BARS)】以及 STAR 题库，统一全球面试官的评价口径。</li>
 </ul>
-<h4>6. 知识库自生长与 RAG 智库 (Module 5 &amp; 6)</h4>
+<h4>5. 知识库自生长与 RAG 智库 (Module 5 &amp; 6)</h4>
 <ul>
-<li><strong>动态沉淀体系 (Knowledge Builder)</strong>：在实战中将零碎的踩坑经验录入系统，一键汇编并自动向量化。</li>
-<li><strong>混合检索问答 (Dynamic RAG)</strong>：结合旧版静态 PDF 与动态经验库，HR 随时提问，AI 精准解答并支持溯源查证。</li>
+<li><strong>从 0 到 1 破除冷启动</strong>：HR 随手录入碎片化踩坑经验（如特定国家签证合规底线），系统自动汇编并将其动态向量化（Dynamic RAG）。结合预置的大量真实出海合规干货，实现精准的混合检索问答溯源，杜绝 AI 幻觉。</li>
 </ul>
 <h3>🛠️ Technical Architecture &amp; Deployment (架构与部署)</h3>
 <ul>
-<li><strong>前端交互框架</strong>：基于 Streamlit 构建，采用 Alauda 视觉规范强制浅色主题渲染。</li>
-<li><strong>公有云部署</strong>：系统已成功全量部署至 <code>Streamlit Community Cloud</code>，实现了免运维、高可用。</li>
+<li><strong>前端交互框架</strong>：基于 Streamlit 构建，完美白底蓝调企业级 UI，内置一键缓存强刷机制。</li>
+<li><strong>公有云部署</strong>：系统已全量部署至 Streamlit Community Cloud，免运维高可用。</li>
 </ul>
     </div>
 </body>
