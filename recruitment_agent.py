@@ -1,3 +1,5 @@
+import io
+from pypdf import PdfReader
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
@@ -188,3 +190,68 @@ class RecruitmentAgent:
             return response.choices[0].message.content
         except Exception as e:
             return f"❌ 检索问答失败，错误信息: {str(e)}"
+
+
+    def extract_text_from_file(self, file_name, file_bytes):
+        """解析上传的简历文件文本"""
+        try:
+            if file_name.lower().endswith('.pdf'):
+                reader = PdfReader(io.BytesIO(file_bytes))
+                text = ""
+                for page in reader.pages:
+                    text += page.extract_text() + "\n"
+                return text
+            elif file_name.lower().endswith('.txt'):
+                return file_bytes.decode('utf-8')
+            else:
+                return "Unsupported file format."
+        except Exception as e:
+            return f"文件解析失败: {str(e)}"
+
+    def evaluate_resume(self, jd_text, resume_text):
+        """
+        将候选人简历与 JD 进行硬核比对，生成打分与红线预警
+        """
+        if not self.client:
+            return "⚠️ 请在 .env 文件中配置 OPENAI_API_KEY"
+
+        prompt = f"""
+        你是一位极其严苛的 Alauda (灵雀云) 全球顶尖技术面试官。
+        你的任务是审阅外部猎头推荐的候选人简历，并严格对照我们的职位画像(JD)进行初筛。
+
+        【职位核心诉求 (JD)】:
+        {jd_text}
+
+        【候选人简历 (Parsed Text)】:
+        {resume_text}
+
+        【输出要求】:
+        请使用 Markdown 格式，专业、无情、直击痛点地输出以下 4 个板块：
+        
+        ### 📊 综合匹配度打分
+        - **匹配度**: [0 - 100 分] 
+        - **定性结论**: (例如：高度匹配 / 勉强及格 / 严重不符，并用一句话概括核心原因)
+
+        ### ✨ 核心亮点 (Highlights)
+        - 列出简历中与 JD "The Mission" 和 "Tech Stack" 完美契合的 2-3 个闪光点。如果没有，直接写“无突出亮点”。
+
+        ### 🚨 红线预警 (Red Flags / Deal Breakers)
+        - 极其重要！候选人是否触犯了 JD 中的 Deal Breakers？
+        - 候选人在特定技术栈（如 Kubernetes, AWS）或过往经历中可能存在的“水分”或缺失。
+
+        ### 🎯 初面查验建议 (Interview Probing)
+        - 针对简历中的可疑点或不足，提供 1-2 个极度犀利的电话初筛问题，帮助 HR 瞬间戳破候选人的包装。
+        """
+
+        try:
+            response = self.client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3, # 打分和评估需要极度客观冷静
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"❌ 简历评估失败: {str(e)}"
