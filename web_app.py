@@ -306,15 +306,15 @@ with st.sidebar:
     page = st.radio(
         "选择要执行的任务：",
         [
-            "🏠 首页：全流程作战大盘", 
+            "🏠 首页：全流程作战大盘",
             "📋 模块零：HC 业务需求审批",
-            "🎯 模块一：JD 逆向与自动寻源", 
+            "🎯 模块一：JD 逆向与自动寻源",
             "✉️ 模块二：自动化触达 (Outreach)",
             "📄 模块三：简历智能初筛 (Resume Matcher)",
             "📝 模块四：结构化面试打分卡",
-            "📚 模块五：Playbook 智库问答",
-            "🏗️ 模块六：知识库自生长 (0-to-1)",
-            "👥 模块七：候选人 Pipeline 看板"
+            "👥 模块七：候选人 Pipeline 看板",
+            "📚 模块五：Playbook 智库问答（待更新）",
+            "🏗️ 模块六：知识库自生长（待更新）",
         ],
         label_visibility="collapsed"
     )
@@ -724,7 +724,7 @@ elif page == "📝 模块四：结构化面试打分卡":
                         mime="text/markdown",
                     )
 
-elif page == "📚 模块五：Playbook 智库问答":
+elif page == "📚 模块五：Playbook 智库问答（待更新）":
     st.markdown('<div class="main-title">📚 灵雀云出海智库 AI 助手</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">基于 RAG 检索增强技术。您可以随时询问关于本地化合规、出海战略指导手册、雇主品牌沟通话术等内容。</div>', unsafe_allow_html=True)
     
@@ -788,7 +788,7 @@ elif page == "📚 模块五：Playbook 智库问答":
                         
             st.session_state.messages.append({"role": "assistant", "content": response})
 
-elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
+elif page == "🏗️ 模块六：知识库自生长（待更新）":
     st.markdown('<div class="main-title">🏗️ 知识库全自动收割机 (Web Auto-Harvester)</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">告别人工录入！只需输入权威政策网页或竞品招聘网址，AI 爬虫将自动提取、清洗并将其沉淀为结构化的本地知识库。</div>', unsafe_allow_html=True)
 
