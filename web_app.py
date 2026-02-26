@@ -12,7 +12,7 @@ load_dotenv(override=True)
 
 # Streamlit Cloud 部署时通过 Secrets 注入 LLM 凭据（优先级高于 .env）
 try:
-    for key in ["OPENAI_API_KEY", "OPENAI_API_BASE", "LLM_MODEL"]:
+    for key in ["OPENAI_API_KEY", "OPENAI_API_BASE", "LLM_MODEL", "STRONG_MODEL", "EMBEDDING_API_KEY", "EMBEDDING_API_BASE"]:
         val = st.secrets.get(key, "")
         if val:
             os.environ[key] = val
