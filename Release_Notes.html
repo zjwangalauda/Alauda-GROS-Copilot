@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alauda GROS Copilot - Release Notes</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif; background: #F8FAFC; color: #1E293B; line-height: 1.7; }
+        .header { background: linear-gradient(135deg, #004D99 0%, #003366 100%); color: #fff; padding: 48px 0 40px; text-align: center; }
+        .header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+        .header p { font-size: 1rem; opacity: 0.85; }
+        .container { max-width: 880px; margin: -24px auto 60px; padding: 0 24px; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); padding: 36px 40px; margin-bottom: 28px; border: 1px solid #E2E8F0; }
+        .version-badge { display: inline-block; background: #004D99; color: #fff; font-size: 0.85rem; font-weight: 600; padding: 4px 14px; border-radius: 20px; margin-bottom: 6px; }
+        .version-badge.old { background: #64748B; }
+        .card h2 { font-size: 1.35rem; color: #004D99; margin: 8px 0 4px; }
+        .card .date { font-size: 0.9rem; color: #64748B; margin-bottom: 18px; }
+        .card h3 { font-size: 1.1rem; color: #1E293B; margin: 22px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #E2E8F0; }
+        .card h4 { font-size: 1rem; color: #334155; margin: 16px 0 8px; }
+        .card p { margin-bottom: 10px; font-size: 0.95rem; }
+        .card ul { padding-left: 22px; margin-bottom: 10px; }
+        .card ul li { margin-bottom: 8px; font-size: 0.95rem; }
+        .card ul li strong { color: #004D99; }
+        code { background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-size: 0.88rem; color: #0F172A; }
+        .module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+        .module-card { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px 18px; }
+        .module-card h5 { color: #004D99; font-size: 0.92rem; margin-bottom: 6px; }
+        .module-card p { font-size: 0.85rem; color: #475569; margin: 0; }
+        .footer { text-align: center; padding: 30px 0 40px; font-size: 0.85rem; color: #94A3B8; }
+        .footer a { color: #004D99; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🌍 Alauda GROS Copilot</h1>
+    <p>Release Notes — 全球招聘智能体平台版本发布日志</p>
+</div>
+
+<div class="container">
+
+    <!-- V1.6 -->
+    <div class="card">
+        <span class="version-badge">V1.6 — Latest</span>
+        <h2>全链路生产加固：双模型路由、跨会话持久化与知识库去重</h2>
+        <div class="date">2026-02-27</div>
+
+        <h3>🔥 P0 — 关键缺陷修复 (Critical Bug Fixes)</h3>
+
+        <h4>AI 引擎：双模型路由 (Dual-Model Routing)</h4>
+        <ul>
+            <li><strong>新增 STRONG_MODEL 环境变量</strong>：将任务按复杂度拆分路由至不同模型。快模型 <code>claude-haiku-4-5</code> 负责外展文案、简历评分、Q&A；强模型 <code>claude-sonnet-4-6</code> 负责 JD 生成与面试评分卡，在成本与质量之间取得最优平衡。</li>
+            <li><strong>修复致命重复定义缺陷</strong>：发现并修复 <code>recruitment_agent.py</code> 中 4 个方法被重复定义的隐蔽 Bug（Python 静默丢弃第一个更完整的版本），导致 100 分量化简历评分卡实际从未生效。修复后评分逻辑完全还原。</li>
+            <li><strong>全链路英文提示词</strong>：系统 Prompt 与所有任务 Prompt 全面切换至英文，充分利用模型在英文语料上的训练优势，提升输出的专业度与精确度。Temperature 按任务类型精细化分级（0.0 → 0.5）。</li>
+        </ul>
+
+        <h4>RAG 知识库：持久化索引 (FAISS Persistence)</h4>
+        <ul>
+            <li><strong>FAISS 索引持久化</strong>：知识库向量索引首次构建后自动保存至磁盘 (<code>data/faiss_index/</code>)，后续启动直接加载，彻底避免每次重启重建索引（数百文档场景下启动时间从分钟级降至秒级）。</li>
+            <li><strong>Playbook 热更新</strong>：模块六"编译"按钮触发 <code>invalidate_rag_index()</code>，原子性清除磁盘索引并重置 Streamlit 资源缓存，新知识立即对模块五生效，无需重启应用。</li>
+            <li><strong>RAG 模式状态指示</strong>：模块五顶部新增绿色/琥珀色状态横幅，明确告知当前 RAG 运行于"向量语义搜索"还是"关键词降级模式"，帮助运营人员快速判断知识检索质量。</li>
+        </ul>
+
+        <h4>模块零：中英文自动翻译 (Auto-Translation)</h4>
+        <ul>
+            <li><strong>零门槛双语输入</strong>：HC 需求申请表单支持中文填写，提交时系统自动检测中文字符（Unicode 范围 <code>[\u4e00-\u9fff]</code>），调用 AI 将全部字段翻译为专业英文后再入库，确保后续模块（JD 生成、X-Ray 搜索）始终使用英文语料，消除语言壁垒对招聘结果的影响。翻译内容在可折叠区域预览后确认保存，翻译失败时原文回退（静默容错）。</li>
+        </ul>
+
+        <h3>✨ P1 — 体验增强 (UX Enhancements)</h3>
+
+        <h4>模块一：X-Ray 搜索一键直达 (Clickable Search Links)</h4>
+        <ul>
+            <li><strong>搜索代码块自动提取</strong>：JD 生成完成后，系统通过正则自动识别输出中的 X-Ray Boolean 搜索字符串代码块，在每个搜索组合下方渲染对应的"直接在 Google 中搜索"按钮（URL encode 处理）。招聘人员无需手动复制粘贴即可立即验证搜索效果，节省大量重复操作。</li>
+        </ul>
+
+        <h4>模块一至四：JD 跨会话持久化 (Cross-Session JD Persistence)</h4>
+        <ul>
+            <li><strong>JD 自动持久化</strong>：模块一生成的 JD 内容同步写入 <code>data/generated/latest_jd.json</code>，附带岗位名称与生成时间戳。</li>
+            <li><strong>下游模块智能恢复</strong>：模块二（外展文案）、模块三（简历评分）、模块四（面试评分卡）在 Session State 为空时自动从磁盘加载上一次 JD，并在界面顶部显示"自动还原"提示（岗位名称 + 生成日期）。用户无需在每次刷新页面后重新生成 JD，可跨会话连续工作。</li>
+        </ul>
+
+        <h4>模块六：知识碎片去重保护 (Content Deduplication)</h4>
+        <ul>
+            <li><strong>MD5 内容哈希去重</strong>：<code>KnowledgeManager.add_fragment()</code> 在写入前计算内容的 MD5 哈希（取前 12 位），与现有所有条目比对。完全相同的内容将被静默跳过，界面显示"去重保护"警告，避免重复爬取同一网页或重复录入导致知识库膨胀。</li>
+            <li><strong>来源 URL 追踪</strong>：每条知识碎片新增 <code>source_url</code> 字段，自动捕获从哪个网页爬取。编译为 Markdown 时同步输出来源链接，RAG 问答溯源成为可能。</li>
+        </ul>
+    </div>
+
+    <!-- V1.5 -->
+    <div class="card">
+        <span class="version-badge old">V1.5</span>
+        <h2>AI 引擎升级与生产加固</h2>
+        <div class="date">2026-02-26</div>
+
+        <h3>🔥 V1.5 核心变更 (Major Changes)</h3>
+
+        <h4>AI 引擎全面升级 (LLM Engine Overhaul)</h4>
+        <ul>
+            <li><strong>底座模型切换</strong>：从 DeepSeek (<code>deepseek-chat</code>) 全面切换至 <strong>Claude Haiku</strong> (<code>claude-haiku-4-5-20251001</code>)，推理质量与多语言能力显著提升。</li>
+            <li><strong>内置免费 AI 引擎</strong>：系统已内置 Claude Haiku 推理引擎，用户无需配置任何 API Key 即可直接使用全部核心功能。零配置、开箱即用。</li>
+            <li><strong>模型名称可配置化</strong>：新增 <code>LLM_MODEL</code> 环境变量，支持动态切换底座模型（如 <code>claude-sonnet-4-5-20250929</code>, <code>gemini-2.5-pro</code> 等），无需修改源代码。</li>
+            <li><strong>Streamlit Secrets 注入修复</strong>：修复了 Streamlit Cloud 部署时 API Key 无法正确传导至底层 Agent 模块的致命缺陷。使用 <code>try/except</code> 包裹 <code>st.secrets.get()</code> 调用，并采用始终覆盖策略确保环境变量正确注入。</li>
+        </ul>
+
+        <h4>安全与工程化 (Security &amp; Engineering)</h4>
+        <ul>
+            <li><strong>敏感信息防泄漏</strong>：<code>.gitignore</code> 强化，确保 <code>.env</code>, <code>.streamlit/secrets.toml</code> 等含密钥文件永不进入版本控制。</li>
+            <li><strong>冗余文件清理</strong>：移除 <code>.html</code> 构建产物，保持仓库整洁。</li>
+            <li><strong>Alauda 企业主题</strong>：<code>.streamlit/config.toml</code> 统一品牌色 <code>#004D99</code>，白底深色文字企业级视觉规范。</li>
+        </ul>
+    </div>
+
+    <!-- V1.4.1 -->
+    <div class="card">
+        <span class="version-badge old">V1.4.1 — Final RC</span>
+        <h2>全流程闭环与云端部署</h2>
+        <div class="date">2026-02-26</div>
+
+        <h3>🌟 系统概述 (System Overview)</h3>
+        <p>Alauda GROS Copilot 是一款将灵雀云《全球技术精英招聘操作系统》静态方法论全面智能化的 AI 招聘工作台。该系统通过先进的生成式 AI 技术（Generative AI）和检索增强生成（RAG），帮助业务主管与 HR 在出海招聘中实现"流水线式精准捕获"。</p>
+        <p>这不是一个简单的"写职位描述"的工具，而是一个<strong>固化了顶级猎头与前沿组织设计方法论的企业级应用</strong>。系统已成功部署至云端，实现 7x24 小时全球可用，彻底打通了"业务线需求 → JD 生成 → 自动化触达 → 简历智能初筛 → 面试官赋能 → 知识库沉淀"的生产级闭环。</p>
+
+        <h3>🚀 核心功能模块 (Key Features)</h3>
+        <div class="module-grid">
+            <div class="module-card">
+                <h5>📋 模块零：HC 需求审批</h5>
+                <p>打破部门壁垒，业务线主管用大白话提交 HC 申请，数据流自动穿透至后续 AI 引擎。</p>
+            </div>
+            <div class="module-card">
+                <h5>🎯 模块一：JD 逆向与寻源</h5>
+                <p>通过四维业务拷问倒推候选人画像，一键生成高级英文 JD 与 Google X-Ray 布尔搜索代码。</p>
+            </div>
+            <div class="module-card">
+                <h5>✉️ 模块二：自动化触达</h5>
+                <p>采用 Alex Hormozi 的 Acquisition 营销框架，生成直击痛点的高级破冰邮件与 InMail。</p>
+            </div>
+            <div class="module-card">
+                <h5>📄 模块三：简历智能雷达</h5>
+                <p>硬性数学算分卡防御模型，<code>Temperature=0.0</code> 绝对客观推理，消除"打分漂移"。支持批量上传。</p>
+            </div>
+            <div class="module-card">
+                <h5>📝 模块四：结构化面试</h5>
+                <p>统一全球面试"度量衡"，生成带 1-5 分标准的【行为锚定评分卡 (BARS)】与 STAR 题库。</p>
+            </div>
+            <div class="module-card">
+                <h5>📚 模块五/六：知识库 &amp; RAG</h5>
+                <p>全自动网页情报收割机 + 混合检索问答，突破反爬限制，精准萃取合规红线，杜绝 AI 幻觉。</p>
+            </div>
+        </div>
+
+        <h3>🛠️ 架构与部署</h3>
+        <ul>
+            <li><strong>前端交互框架</strong>：基于 Streamlit 构建，白底蓝调企业级 UI，内置一键缓存强刷机制。</li>
+            <li><strong>公有云部署</strong>：系统已全量托管至 Streamlit Community Cloud，免运维高可用。</li>
+        </ul>
+    </div>
+
+</div>
+
+<div class="footer">
+    <p>Alauda GROS Copilot — 灵雀云全球招聘智能体平台</p>
+    <p style="margin-top: 4px;">&copy; 2026 <a href="https://www.alauda.cn" target="_blank">Alauda (灵雀云)</a></p>
+</div>
+
+</body>
+</html>
