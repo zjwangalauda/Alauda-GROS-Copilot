@@ -1,4 +1,5 @@
 import os
+import shutil
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -8,12 +9,14 @@ from langchain_openai import OpenAIEmbeddings
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
+FAISS_INDEX_PATH = "data/faiss_index"
+
 class RAGSystem:
     def __init__(self, data_dir="data"):
         self.data_dir = data_dir
-        
+
         emb_api_key = os.environ.get("EMBEDDING_API_KEY", "")
-        
+
         if emb_api_key and "your_" not in emb_api_key:
             emb_api_base = os.environ.get("EMBEDDING_API_BASE", "https://api.openai.com/v1")
             try:
@@ -22,88 +25,127 @@ class RAGSystem:
                     openai_api_key=emb_api_key,
                     openai_api_base=emb_api_base
                 )
+                self._embedding_mode = "vector"
             except Exception:
                 self.embeddings = KeywordSearchEmbeddings()
+                self._embedding_mode = "keyword"
         else:
             self.embeddings = KeywordSearchEmbeddings()
-            
+            self._embedding_mode = "keyword"
+
         self.vector_store = None
-        self.all_chunks = [] # 用于后备的纯文本匹配
+        self.all_chunks = []
+
+    @property
+    def embedding_mode(self):
+        """Returns 'vector' (real semantic search) or 'keyword' (degraded fallback)."""
+        return self._embedding_mode
 
     def load_and_index(self):
         if self.vector_store is not None:
-            return True 
-            
+            return True
+
+        # --- Try loading persisted FAISS index first (skip rebuild if up-to-date) ---
+        if self._embedding_mode == "vector" and os.path.exists(FAISS_INDEX_PATH):
+            try:
+                self.vector_store = FAISS.load_local(
+                    FAISS_INDEX_PATH,
+                    self.embeddings,
+                    allow_dangerous_deserialization=True
+                )
+                return True
+            except Exception:
+                # Index corrupt or incompatible — fall through to rebuild
+                pass
+
+        # --- Build index from source documents ---
         docs = []
         if not os.path.exists(self.data_dir):
             return False
-            
+
         for filename in os.listdir(self.data_dir):
             file_path = os.path.join(self.data_dir, filename)
             if filename.endswith(".pdf"):
                 try:
                     loader = PyPDFLoader(file_path)
                     docs.extend(loader.load())
-                except Exception as e:
+                except Exception:
                     pass
             elif filename.endswith(".md"):
                 try:
                     loader = TextLoader(file_path, encoding="utf-8")
                     docs.extend(loader.load())
-                except Exception as ex:
+                except Exception:
                     pass
-                
+
         if not docs:
             return False
 
+        # Larger chunks preserve complete regulatory clauses (policy text is dense)
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500,
-            chunk_overlap=50,
+            chunk_size=1000,
+            chunk_overlap=150,
             length_function=len
         )
         splits = text_splitter.split_documents(docs)
-        self.all_chunks = splits # 存储原文本供字符串匹配使用
-        
+        self.all_chunks = splits
+
         if not self.embeddings:
             return False
-            
+
         try:
             self.vector_store = FAISS.from_documents(splits, self.embeddings)
+            # Persist to disk so subsequent loads skip the rebuild
+            if self._embedding_mode == "vector":
+                self.vector_store.save_local(FAISS_INDEX_PATH)
             return True
-        except Exception as e:
+        except Exception:
             return False
 
-    def retrieve(self, query, k=3):
+    def retrieve(self, query, k=5):
         if not self.vector_store:
             return ""
-            
-        # 如果是降级模式，我们直接结合精准文本搜索，弥补伪向量的随机性
+
+        # Keyword fallback: intercept before FAISS (pseudo-vectors are useless for similarity)
         if isinstance(self.embeddings, KeywordSearchEmbeddings):
             matched_docs = []
-            keywords = [word for word in query.replace("?", "").replace("？", "").split(" ") if len(word) > 1]
-            
-            # 首先尝试字面关键词匹配
+            keywords = [
+                word for word in query.replace("?", "").replace("?", "").split()
+                if len(word) > 1
+            ]
             for doc in self.all_chunks:
                 text = doc.page_content.lower()
-                # 命中任何关键词，或者提问词的子串
-                if any(kw.lower() in text for kw in keywords) or "配额" in text or "新加坡" in text:
+                if any(kw.lower() in text for kw in keywords):
                     matched_docs.append(doc.page_content)
-                    
             if matched_docs:
-                return "\n\n".join(list(set(matched_docs))[:k+2])
+                return "\n\n".join(list(dict.fromkeys(matched_docs))[:k])
+            return ""
 
-        # 否则使用原本的相似度搜索
+        # Real vector similarity search
         results = self.vector_store.similarity_search(query, k=k)
-        context = "\n\n".join([doc.page_content for doc in results])
-        return context
+        return "\n\n".join([doc.page_content for doc in results])
+
+
+def invalidate_rag_index():
+    """
+    Call this after updating the knowledge base (Module 6 compile).
+    Deletes the persisted FAISS index so Module 5 rebuilds with fresh content,
+    and clears Streamlit's resource cache so the RAGSystem object is re-created.
+    """
+    if os.path.exists(FAISS_INDEX_PATH):
+        shutil.rmtree(FAISS_INDEX_PATH)
+    st.cache_resource.clear()
+
 
 class KeywordSearchEmbeddings:
-    """充当占位符，让 FAISS 不报错，实际检索时被 RAGSystem 截获转为文本匹配"""
+    """Placeholder that lets FAISS initialise without an embedding API.
+    Actual retrieval is intercepted in RAGSystem.retrieve() and handled
+    via keyword matching instead."""
     def embed_documents(self, texts):
         return [[0.0] * 10 for _ in texts]
 
     def embed_query(self, text):
         return [0.0] * 10
-        
+
     def __call__(self, text):
         return self.embed_query(text)

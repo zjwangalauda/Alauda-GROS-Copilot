@@ -10,7 +10,11 @@ class RecruitmentAgent:
     def __init__(self):
         self.api_key = os.environ.get("OPENAI_API_KEY")
         self.base_url = os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1")
+        # Fast model: outreach drafts, Q&A, resume scoring
         self.model = os.environ.get("LLM_MODEL", "claude-haiku-4-5-20251001")
+        # Strong model: JD generation, interview scorecard, knowledge extraction
+        # Falls back to self.model if STRONG_MODEL is not configured
+        self.strong_model = os.environ.get("STRONG_MODEL", self.model)
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url) if self.api_key else None
 
         self.system_prompt = """
@@ -70,7 +74,7 @@ HR staff can easily modify and reuse them.
 
         try:
             response = self.client.chat.completions.create(
-                model=self.model,
+                model=self.strong_model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": prompt}
@@ -108,7 +112,7 @@ For each dimension provide:
 
         try:
             response = self.client.chat.completions.create(
-                model=self.model,
+                model=self.strong_model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": prompt}

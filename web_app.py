@@ -614,22 +614,20 @@ elif page == "📚 模块五：Playbook 智库问答":
     rag = get_rag_system()
     
     with st.spinner("⏳ 正在挂载本地知识库 (PDF & 动态沉淀库)..."):
-        # 强制清除之前的缓存状态，保证模块四刚生成的文件能被读到
-        rag.vector_store = None 
         is_loaded = rag.load_and_index()
-        
+
     if not is_loaded:
-        st.error("❌ 知识库引擎启动失败。")
-        st.info("""
-        **诊断信息：**
-        系统需要文本向量化（Embedding）服务来解析您的 PDF 和碎片。由于 DeepSeek 官方暂不提供此接口，请在系统根目录的 `.env` 文件中补充以下配置：
-        ```env
-        EMBEDDING_API_KEY=您的_兼容_OpenAI_格式的_Embedding_Key
-        EMBEDDING_API_BASE=对应的API地址
-        ```
-        """)
+        st.error("❌ 知识库引擎启动失败，未找到可加载的文档。")
     else:
-        st.info("✅ 已成功挂载《Alauda Global Recruitment Playbook》以及您的动态经验碎片。您可以开始提问。")
+        if rag.embedding_mode == "vector":
+            st.success("✅ 知识库已就绪 — **向量语义搜索模式**（全精度）")
+        else:
+            st.warning(
+                "⚠️ 知识库已就绪，但当前运行在**关键词降级模式**（语义相似度未启用）。\n\n"
+                "如需开启全精度向量检索，请在 `.env` 中配置：\n"
+                "```\nEMBEDDING_API_KEY=your_openai_compatible_key\n"
+                "EMBEDDING_API_BASE=https://api.openai.com/v1\n```"
+            )
     
     chat_container = st.container()
     
@@ -743,7 +741,7 @@ Requirements:
 """
                                         
                                         ai_result = agent.client.chat.completions.create(
-                                            model=agent.model,
+                                            model=agent.strong_model,
                                             messages=[{"role": "user", "content": prompt}],
                                             temperature=0.2
                                         ).choices[0].message.content
@@ -778,7 +776,10 @@ Requirements:
             with st.spinner("正在将零散情报汇编为结构化 Markdown 库..."):
                 success = km.compile_to_markdown()
                 if success:
-                    st.success("✅ 动态 Playbook 编译完成！您可以前往【模块五】进行智能问答了。")
+                    from document_parser import invalidate_rag_index
+                    invalidate_rag_index()
+                    st.success("✅ 动态 Playbook 编译完成！RAG 引擎已自动刷新，新知识立即生效。")
+                    st.info("💡 现在可直接前往【模块五】提问，无需重启系统。")
                 else:
                     st.warning("目前数据库中没有任何情报。")
                     
