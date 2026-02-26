@@ -304,7 +304,7 @@ if page == "🏠 首页：全流程作战大盘":
     
     with col1:
         st.markdown("### 🎯 战略目标 (The Strategy)")
-        st.write("通过 **“招聘工程学”系统**，实现“流水线式精准捕获”，取代“作坊式招聘”。让非技术背景的 HR 也能像特种部队一样精准捕获海外高端架构师。")
+        st.write('通过 **\u201c招聘工程学\u201d系统**，实现\u201c流水线式精准捕获\u201d，取代\u201c作坊式招聘\u201d。让非技术背景的 HR 也能像特种部队一样精准捕获海外高端架构师。')
         
         st.markdown("### 🗺️ The Blueprint: 7步闭环全流程地图")
         st.info("""
@@ -326,7 +326,7 @@ if page == "🏠 首页：全流程作战大盘":
         <p style="color: #4B5563; font-size: 0.95rem;">前往左侧 <b>[模块一]</b>，输入业务线的核心挑战和红线要求，AI 将自动输出具备高转化率的 JD 和猎头级寻源代码。</p>
         <hr style="border-top: 1px solid #E5E7EB;">
         <h4 style="color: #004D99;">第 2 步：构建面试标准</h4>
-        <p style="color: #4B5563; font-size: 0.95rem;">前往 <b>[模块二]</b>，将生成的 JD 传入系统，一键生成带有 STAR 面试题库的量化打分板，统一全球面试官的“度量衡”。</p>
+        <p style="color: #4B5563; font-size: 0.95rem;">前往 <b>[模块二]</b>，将生成的 JD 传入系统，一键生成带有 STAR 面试题库的量化打分板，统一全球面试官的"度量衡"。</p>
         <hr style="border-top: 1px solid #E5E7EB;">
         <h4 style="color: #004D99;">第 3 步：合规与政策查询</h4>
         <p style="color: #4B5563; font-size: 0.95rem;">在 <b>[模块三]</b>，您可以随时向 AI 询问《Alauda 出海招聘手册》中的内容，例如各地薪资结构、期权发放政策等。</p>
@@ -484,19 +484,19 @@ elif page == "✉️ 模块二：自动化触达 (Outreach)":
     else:
         st.warning("建议先去【模块一】生成职位描述，或者在下方手动粘贴 JD 核心信息。")
 
-    st.info(“🇬🇧 **Language guidance:** Fill in candidate background in **English** — the outreach copy targets overseas engineers and benefits most from English-language inputs.”)
+    st.info("🇬🇧 **Language guidance:** Fill in candidate background in **English** — the outreach copy targets overseas engineers and benefits most from English-language inputs.")
 
-    with st.form(“outreach_form”):
+    with st.form("outreach_form"):
         col1, col2 = st.columns([1, 1])
 
         with col1:
-            st.markdown(“**1. Job Context (JD)**”)
-            jd_input = st.text_area(“Job description / core mission”, value=default_jd_text, height=250)
+            st.markdown("**1. Job Context (JD)**")
+            jd_input = st.text_area("Job description / core mission", value=default_jd_text, height=250)
 
         with col2:
-            st.markdown(“**2. Candidate Intelligence** — for personalized opening”)
-            candidate_name = st.text_input(“Candidate name (e.g. John Doe)”)
-            candidate_bg = st.text_area(“Candidate highlights / background (from resume or LinkedIn)”, placeholder=”E.g.: 3 years at Red Hat, led OpenShift deployment at a major bank; recently open-sourced a Kubernetes scheduling plugin on GitHub with 200+ stars...”, height=170)
+            st.markdown("**2. Candidate Intelligence** — for personalized opening")
+            candidate_name = st.text_input("Candidate name (e.g. John Doe)")
+            candidate_bg = st.text_area("Candidate highlights / background (from resume or LinkedIn)", placeholder="E.g.: 3 years at Red Hat, led OpenShift deployment at a major bank; recently open-sourced a Kubernetes scheduling plugin on GitHub with 200+ stars...", height=170)
 
         submitted = st.form_submit_button("✉️ 生成英文触达话术 (Email & InMail)", type="primary", use_container_width=True)
 
@@ -724,8 +724,8 @@ elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
                                 else:
                                     st.success(f"✅ 网页爬取成功（共 {len(raw_text)} 字符）。正在交由 AI 进行知识萃取...")
                                     
-                                    with st.spinner(“🤖 AI extracting core policy intelligence...”):
-                                        prompt = f”””
+                                    with st.spinner("🤖 AI extracting core policy intelligence..."):
+                                        prompt = f"""
 You are an expert in global compliance and recruitment intelligence extraction.
 I have scraped the following webpage: {target_url}
 
@@ -735,12 +735,12 @@ relevant to [{region}] in the category [{category}].
 Requirements:
 - Strip all filler content, navigation text, and promotional language
 - Output precise, dated facts (salary thresholds, visa quotas, notice periods, etc.)
-- If no relevant information is found, respond exactly with: “EXTRACTION_FAILED”
+- If no relevant information is found, respond exactly with: "EXTRACTION_FAILED"
 - Respond in English
 
 [Raw scraped text (truncated)]:
 {raw_text[:8000]}
-“””
+"""
                                         
                                         ai_result = agent.client.chat.completions.create(
                                             model=agent.model,
