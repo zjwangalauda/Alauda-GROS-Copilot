@@ -273,6 +273,41 @@ Do NOT fabricate, generalize, or infer beyond what is documented.
         except Exception as e:
             return f"❌ Q&A failed: {str(e)}"
 
+    def translate_hc_fields(self, fields: dict) -> dict:
+        """
+        Translate HC request fields from Chinese (or mixed) to English.
+        Technical terms (Kubernetes, Docker, etc.) are preserved as-is.
+        Returns the original fields unchanged if translation fails.
+        """
+        import json as _json
+        if not self.client:
+            return fields
+
+        prompt = f"""You are a professional technical recruiter translator.
+Translate the following recruitment HC request fields into natural, professional Business English.
+Rules:
+- Keep all technical terms as-is (Kubernetes, Docker, OpenShift, CI/CD, CKA, etc.)
+- Keep proper nouns as-is (Singapore, Alauda, Red Hat, etc.)
+- Output ONLY a valid JSON object with the exact same keys — no explanation, no markdown fences
+
+Input JSON:
+{_json.dumps(fields, ensure_ascii=False, indent=2)}
+"""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+            )
+            content = response.choices[0].message.content.strip()
+            # Strip markdown code fences if the model wraps output
+            if content.startswith("```"):
+                content = content[content.find("\n") + 1:]
+                content = content[:content.rfind("```")].strip()
+            return _json.loads(content)
+        except Exception:
+            return fields  # Fail silently — return originals
+
     def extract_text_from_file(self, file_name, file_bytes):
         """Parse uploaded resume file (PDF or TXT) and return extracted text."""
         try:

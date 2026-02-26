@@ -344,7 +344,12 @@ elif page == "📋 模块零：HC 业务需求审批":
 
     with tab1:
         st.markdown("### 业务线需求申请表")
-        st.info("🇬🇧 **Language guidance:** Please fill in all content fields in **English** — this HC will flow directly into JD generation and X-Ray sourcing, both of which perform best with English inputs.")
+        st.info(
+            "🌐 **语言说明：** 支持中文或英文填写。\n\n"
+            "- 如果您用**英文**填写，内容将直接保存并流转至后续模块。\n"
+            "- 如果您用**中文**填写，系统提交时会**自动翻译成英文**再保存，"
+            "确保 JD 生成和 X-Ray 寻源获得最佳效果。"
+        )
         with st.form("hc_request_form", clear_on_submit=True):
             col_a, col_b = st.columns(2)
             with col_a:
@@ -364,8 +369,37 @@ elif page == "📋 模块零：HC 业务需求审批":
                 if not role_title or not mission or not tech_stack:
                     st.error("请完整填写标有 * 的必填项！")
                 else:
+                    import re as _re
+                    def _has_chinese(text):
+                        return bool(_re.search(r'[\u4e00-\u9fff]', str(text)))
+
+                    fields = {
+                        "role_title": role_title,
+                        "location": location,
+                        "mission": mission,
+                        "tech_stack": tech_stack,
+                        "deal_breakers": deal_breakers,
+                        "selling_point": selling_point,
+                    }
+                    needs_translation = any(_has_chinese(v) for v in fields.values())
+
+                    if needs_translation and os.getenv("OPENAI_API_KEY"):
+                        with st.spinner("🌐 检测到中文内容，正在自动翻译为英文..."):
+                            translated = agent.translate_hc_fields(fields)
+                        role_title    = translated.get("role_title", role_title)
+                        location      = translated.get("location", location)
+                        mission       = translated.get("mission", mission)
+                        tech_stack    = translated.get("tech_stack", tech_stack)
+                        deal_breakers = translated.get("deal_breakers", deal_breakers)
+                        selling_point = translated.get("selling_point", selling_point)
+                        st.success("✅ 已自动翻译为英文，以下是翻译后保存的内容：")
+                        with st.expander("📄 查看翻译结果", expanded=True):
+                            st.markdown(f"**Mission:** {mission}")
+                            st.markdown(f"**Deal Breakers:** {deal_breakers}")
+                            st.markdown(f"**Selling Point:** {selling_point}")
+
                     hc_mgr.submit_request(department, role_title, location, urgency, mission, tech_stack, deal_breakers, selling_point)
-                    st.success(f"✅ HC 申请已提交！等待 HR BP 审批。")
+                    st.success("✅ HC 申请已提交！等待 HR BP 审批。")
 
     with tab2:
         st.markdown("### HR BP 审批工作台")
