@@ -309,7 +309,7 @@ Input JSON:
             return fields  # Fail silently — return originals
 
     def extract_text_from_file(self, file_name, file_bytes):
-        """Parse uploaded resume file (PDF or TXT) and return extracted text."""
+        """Parse uploaded resume file (PDF, DOCX, or TXT) and return extracted text."""
         try:
             if file_name.lower().endswith('.pdf'):
                 reader = PdfReader(io.BytesIO(file_bytes))
@@ -317,9 +317,13 @@ Input JSON:
                 for page in reader.pages:
                     text += page.extract_text() + "\n"
                 return text
+            elif file_name.lower().endswith('.docx'):
+                import docx
+                doc = docx.Document(io.BytesIO(file_bytes))
+                return "\n".join(para.text for para in doc.paragraphs if para.text.strip())
             elif file_name.lower().endswith('.txt'):
                 return file_bytes.decode('utf-8')
             else:
-                return "Unsupported file format."
+                return "Unsupported file format. Supported: PDF, DOCX, TXT."
         except Exception as e:
             return f"File parsing failed: {str(e)}"

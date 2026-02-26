@@ -2,7 +2,7 @@ import os
 import json
 import hashlib
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -31,15 +31,17 @@ class KnowledgeManager:
         with open(self.db_path, "w", encoding="utf-8") as f:
             json.dump(self.fragments, f, ensure_ascii=False, indent=2)
 
-    def add_fragment(self, region, category, content, tags="", source_url=""):
+    def add_fragment(self, region, category, content, tags="", source_url="", ttl_days=90):
         """Add a knowledge fragment. Returns (True, 'added') or (False, 'duplicate')."""
         content_hash = hashlib.md5(content.strip().encode("utf-8")).hexdigest()[:12]
         for existing in self.fragments:
             if existing.get("content_hash") == content_hash:
                 return False, "duplicate"
+        expires_at = (datetime.now() + timedelta(days=ttl_days)).strftime("%Y-%m-%d")
         fragment = {
             "id": f"frag_{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "date": datetime.now().strftime("%Y-%m-%d"),
+            "expires_at": expires_at,
             "content_hash": content_hash,
             "source_url": source_url,
             "region": region,
@@ -50,6 +52,22 @@ class KnowledgeManager:
         self.fragments.append(fragment)
         self._save_fragments()
         return True, "added"
+
+    def get_expiry_status(self, fragment):
+        """Returns 'expired', 'expiring_soon' (<=14 days), or 'ok'."""
+        expires_at = fragment.get("expires_at")
+        if not expires_at:
+            return "ok"
+        try:
+            exp_date = datetime.strptime(expires_at, "%Y-%m-%d")
+            days_left = (exp_date - datetime.now()).days
+            if days_left < 0:
+                return "expired"
+            if days_left <= 14:
+                return "expiring_soon"
+            return "ok"
+        except ValueError:
+            return "ok"
 
     def get_all_fragments(self):
         return sorted(self.fragments, key=lambda x: x["date"], reverse=True)
@@ -76,8 +94,12 @@ class KnowledgeManager:
                 cat_frags = [f for f in region_frags if f["category"] == category]
                 
                 for idx, frag in enumerate(cat_frags, 1):
-                    md_content += f"**经验规则 {idx} ({frag['date']})**\n"
+                    status = self.get_expiry_status(frag)
+                    expired_mark = " ⚠️ [EXPIRED — may be outdated]" if status == "expired" else ""
+                    md_content += f"**经验规则 {idx} ({frag['date']}){expired_mark}**\n"
                     md_content += f"> {frag['content']}\n\n"
+                    if frag.get("expires_at"):
+                        md_content += f"*有效期至: {frag['expires_at']}*\n\n"
                     if frag.get("tags"):
                         md_content += f"*标签: {', '.join(frag['tags'])}*\n\n"
                     if frag.get("source_url"):
