@@ -339,25 +339,25 @@ elif page == "📋 模块零：HC 业务需求审批":
     st.markdown('<div class="sub-title">打造业务部门与 HR 的协同桥梁。业务方在此提报人才需求，HR 审批通过后自动流转至“JD 生成与寻源”模块。</div>', unsafe_allow_html=True)
 
     hc_mgr = HCManager()
-    
+
     tab1, tab2 = st.tabs(["📤 我是业务：提报新 HC", "✅ 我是 HR：审批 HC 需求"])
-    
+
     with tab1:
         st.markdown("### 业务线需求申请表")
-        st.markdown("请用大白话描述你要解决的业务问题，不需要你写专业的 JD，系统后续会自动帮你写。")
+        st.info("🇬🇧 **Language guidance:** Please fill in all content fields in **English** — this HC will flow directly into JD generation and X-Ray sourcing, both of which perform best with English inputs.")
         with st.form("hc_request_form", clear_on_submit=True):
             col_a, col_b = st.columns(2)
             with col_a:
-                department = st.selectbox("需求部门", ["海外出海战略部", "云原生研发中心", "全球交付交付中心", "其他支持部门"])
-                role_title = st.text_input("岗位名称 (俗称即可)", placeholder="比如：新加坡懂K8s的售前")
-                location = st.text_input("工作地点", placeholder="Singapore / Remote")
+                department = st.selectbox("需求部门", ["云原生研发中心", "全球交付中心", "海外售前团队"])
+                role_title = st.text_input("Role Title（岗位名称）", placeholder="E.g.: Technical Service Manager — Singapore")
+                location = st.text_input("Target Location（工作地点）", placeholder="E.g.: Singapore / Malaysia / Remote APAC")
             with col_b:
-                urgency = st.select_slider("紧急程度", options=["🔥 不急", "🔥🔥 正常", "🔥🔥🔥 极其紧急 (项目等米下锅)"])
-                
-            mission = st.text_area("1️⃣ 核心使命 (入职第一年要解决什么最大的麻烦？) *", placeholder="比如：搞定两个当地金融客户的 OpenShift 替换项目...", height=80)
-            tech_stack = st.text_input("2️⃣ 必须掌握的核心技术 (逗号分隔) *", placeholder="Kubernetes, Go, AWS")
-            deal_breakers = st.text_input("3️⃣ 绝对不能接受的特质 (红线)", placeholder="英文不行、不能出差")
-            selling_point = st.text_input("4️⃣ 你能给候选人画什么饼 (核心卖点)", placeholder="跟着我打天下，提成不设上限")
+                urgency = st.select_slider("紧急程度", options=["🔥 Low priority", "🔥🔥 Normal", "🔥🔥🔥 Critical — project blocked on hire"])
+
+            mission = st.text_area("1️⃣ The Mission — what must this person deliver in Year 1? *", placeholder="E.g.: Lead 2 enterprise OpenShift replacement projects for financial clients in Singapore; build a standardized English-language delivery runbook.", height=80)
+            tech_stack = st.text_input("2️⃣ Required Tech Stack（必须技术，逗号分隔）*", placeholder="E.g.: Kubernetes, OpenShift, Docker, Terraform, CI/CD, Linux")
+            deal_breakers = st.text_input("3️⃣ Deal Breakers — hard disqualifiers（红线）", placeholder="E.g.: No business-level English; unwilling to travel; no B2B enterprise experience")
+            selling_point = st.text_input("4️⃣ Selling Point — why should top talent join?（核心卖点）", placeholder="E.g.: High-caliber APAC clients; cutting-edge cloud-native stack; uncapped performance compensation")
             
             submit_hc = st.form_submit_button("🚀 提交 HC 申请", type="primary")
             if submit_hc:
