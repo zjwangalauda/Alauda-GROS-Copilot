@@ -493,7 +493,20 @@ elif page == "🎯 模块一：JD 逆向与自动寻源":
                 )
                 
                 st.session_state["generated_jd"] = result
-                st.success("✅ 生成完成！结果已自动保存到系统缓存中，供下一步（打分卡）调用。")
+
+                # P1-6: persist to disk so the JD survives page refreshes
+                import json as _json
+                os.makedirs("data/generated", exist_ok=True)
+                _jd_record = {
+                    "role_title": role_title,
+                    "location": location,
+                    "generated_at": __import__("datetime").datetime.now().isoformat(),
+                    "jd_content": result,
+                }
+                with open("data/generated/latest_jd.json", "w", encoding="utf-8") as _f:
+                    _json.dump(_jd_record, _f, ensure_ascii=False, indent=2)
+
+                st.success("✅ 生成完成！已自动保存 — 刷新页面或切换模块后仍可在各模块中直接使用。")
                 
                 st.markdown("### 📄 最终交付物")
                 st.markdown(f'<div style="background-color: #FFFFFF; padding: 30px; border-radius: 8px; border: 1px solid #E5E7EB;">{result}</div>', unsafe_allow_html=True)
@@ -507,14 +520,37 @@ elif page == "🎯 模块一：JD 逆向与自动寻源":
                         use_container_width=False
                     )
 
+                    # P1-1: extract Boolean strings from code blocks → one-click search links
+                    import re as _re, urllib.parse as _up
+                    _code_blocks = _re.findall(r'```[^\n]*\n(.*?)```', result, _re.DOTALL)
+                    _search_strings = [b.strip() for b in _code_blocks if len(b.strip()) > 30]
+                    if _search_strings:
+                        st.markdown("---")
+                        st.markdown("### 🔍 一键执行寻源搜索")
+                        st.caption("点击下方链接直接在浏览器中执行 X-Ray 搜索，无需手动复制粘贴。")
+                        for _i, _s in enumerate(_search_strings, 1):
+                            _url = f"https://www.google.com/search?q={_up.quote(_s)}"
+                            _cols = st.columns([3, 1])
+                            with _cols[0]:
+                                st.code(_s, language="")
+                            with _cols[1]:
+                                st.markdown(f"[🔗 立即搜索]({_url})", unsafe_allow_html=False)
+
 elif page == "✉️ 模块二：自动化触达 (Outreach)":
     st.markdown('<div class="main-title">✉️ 高转化率自动化触达 (Cold Outreach)</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">抛弃“我们在招人，你有兴趣吗”的废话，一键生成直击痛点、高度个性化的猎头级触达邮件与 LinkedIn InMail。</div>', unsafe_allow_html=True)
 
+    import json as _json
     default_jd_text = ""
     if "generated_jd" in st.session_state:
         default_jd_text = st.session_state["generated_jd"]
         st.info("💡 系统已自动读取您在【模块一】生成的职位画像。")
+    elif os.path.exists("data/generated/latest_jd.json"):
+        with open("data/generated/latest_jd.json", encoding="utf-8") as _f:
+            _rec = _json.load(_f)
+        default_jd_text = _rec["jd_content"]
+        st.session_state["generated_jd"] = default_jd_text
+        st.info(f"💡 已自动恢复上次生成的 JD（{_rec['role_title']} · {_rec['generated_at'][:10]}）")
     else:
         st.warning("建议先去【模块一】生成职位描述，或者在下方手动粘贴 JD 核心信息。")
 
@@ -555,10 +591,17 @@ elif page == "📄 模块三：简历智能初筛 (Resume Matcher)":
 
     with col_jd:
         st.markdown("### 🎯 Benchmark: Job Description")
+        import json as _json
         default_jd_for_match = ""
         if "generated_jd" in st.session_state:
             default_jd_for_match = st.session_state["generated_jd"]
             st.info("💡 Auto-loaded from Module 1. You may edit before running evaluation.")
+        elif os.path.exists("data/generated/latest_jd.json"):
+            with open("data/generated/latest_jd.json", encoding="utf-8") as _f:
+                _rec = _json.load(_f)
+            default_jd_for_match = _rec["jd_content"]
+            st.session_state["generated_jd"] = default_jd_for_match
+            st.info(f"💡 Auto-restored last generated JD ({_rec['role_title']} · {_rec['generated_at'][:10]})")
         else:
             st.warning("Recommend generating a JD in Module 1 first, or paste an English JD below.")
         st.caption("🇬🇧 Use an English JD for best results — the scoring rubric and resume comparison both perform better in a single language.")
@@ -605,13 +648,19 @@ elif page == "📝 模块四：结构化面试打分卡":
     st.markdown('<div class="main-title">📝 结构化面试评估系统</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">消除面试过程中的主观偏见。基于 JD 自动提取关键维度，生成【行为锚定评分卡 (Scorecard)】与【STAR 题库】。</div>', unsafe_allow_html=True)
     
+    import json as _json
     default_jd_text = ""
     if "generated_jd" in st.session_state:
         default_jd_text = st.session_state["generated_jd"]
         st.info("💡 Auto-loaded the JD generated in Module 1. You may edit before generating the scorecard.")
+    elif os.path.exists("data/generated/latest_jd.json"):
+        with open("data/generated/latest_jd.json", encoding="utf-8") as _f:
+            _rec = _json.load(_f)
+        default_jd_text = _rec["jd_content"]
+        st.session_state["generated_jd"] = default_jd_text
+        st.info(f"💡 Auto-restored last generated JD ({_rec['role_title']} · {_rec['generated_at'][:10]})")
     else:
         st.warning("No JD found. Recommend generating one in Module 1 first, or paste an English JD below.")
-        default_jd_text = ""
 
     st.caption("🇬🇧 English JD recommended — BARS anchors and STAR questions are drawn from English-world interviewing literature and will be significantly more precise.")
     jd_input = st.text_area("Job Description source:", value=default_jd_text, height=350)
@@ -784,9 +833,12 @@ Requirements:
                                             st.warning("AI 未能在该网页中找到有价值的情报。")
                                         else:
                                             tags = f"{region}, Auto-Harvested, {category.split(' ')[0]}"
-                                            km.add_fragment(region, category, ai_result, tags)
-                                            st.success("🎉 知识萃取成功！已自动存入底层数据库。")
-                                            st.info("提取到的精华内容如下：\n" + ai_result)
+                                            _ok, _reason = km.add_fragment(region, category, ai_result, tags, source_url=target_url)
+                                            if _ok:
+                                                st.success("🎉 知识萃取成功！已自动存入底层数据库。")
+                                                st.info("提取到的精华内容如下：\n" + ai_result)
+                                            else:
+                                                st.warning("⚠️ 该内容与数据库中已有条目完全相同，已跳过（去重保护）。")
                             except Exception as e:
                                 st.error(f"抓取网页时发生错误: {str(e)}")
 
@@ -799,8 +851,11 @@ Requirements:
                 man_content = st.text_area("具体经验", height=100)
                 if st.form_submit_button("保存"):
                     if man_content.strip():
-                        km.add_fragment(man_region, man_category, man_content, "Manual")
-                        st.success("录入成功")
+                        _ok, _reason = km.add_fragment(man_region, man_category, man_content, "Manual")
+                        if _ok:
+                            st.success("录入成功")
+                        else:
+                            st.warning("⚠️ 该内容与已有条目重复，已跳过。")
 
     with col2:
         st.markdown("### 🗂️ 知识库编译中心")

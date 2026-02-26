@@ -1,5 +1,6 @@
 import os
 import json
+import hashlib
 import streamlit as st
 from datetime import datetime
 from dotenv import load_dotenv
@@ -30,19 +31,25 @@ class KnowledgeManager:
         with open(self.db_path, "w", encoding="utf-8") as f:
             json.dump(self.fragments, f, ensure_ascii=False, indent=2)
 
-    def add_fragment(self, region, category, content, tags=""):
-        """添加一条经验碎片"""
+    def add_fragment(self, region, category, content, tags="", source_url=""):
+        """Add a knowledge fragment. Returns (True, 'added') or (False, 'duplicate')."""
+        content_hash = hashlib.md5(content.strip().encode("utf-8")).hexdigest()[:12]
+        for existing in self.fragments:
+            if existing.get("content_hash") == content_hash:
+                return False, "duplicate"
         fragment = {
-            "id": f"frag_{datetime.now().strftime('%Y%md%H%M%S')}",
+            "id": f"frag_{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "date": datetime.now().strftime("%Y-%m-%d"),
+            "content_hash": content_hash,
+            "source_url": source_url,
             "region": region,
             "category": category,
             "content": content,
-            "tags": tags.split(",") if tags else []
+            "tags": [t.strip() for t in tags.split(",")] if tags else []
         }
         self.fragments.append(fragment)
         self._save_fragments()
-        return True
+        return True, "added"
 
     def get_all_fragments(self):
         return sorted(self.fragments, key=lambda x: x["date"], reverse=True)
@@ -71,8 +78,10 @@ class KnowledgeManager:
                 for idx, frag in enumerate(cat_frags, 1):
                     md_content += f"**经验规则 {idx} ({frag['date']})**\n"
                     md_content += f"> {frag['content']}\n\n"
-                    if frag["tags"]:
+                    if frag.get("tags"):
                         md_content += f"*标签: {', '.join(frag['tags'])}*\n\n"
+                    if frag.get("source_url"):
+                        md_content += f"*来源: {frag['source_url']}*\n\n"
         
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(md_content)
