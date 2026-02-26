@@ -413,12 +413,12 @@ elif page == "🎯 模块一：JD 逆向与自动寻源":
     selected_hc_label = st.selectbox("流转来源", hc_options)
     
     # 如果选择了某个 HC，自动填充默认值
-    def_role = "Global Presales Architect (售前架构师)"
+    def_role = "Global Presales Architect"
     def_loc = "Singapore / Remote APAC"
-    def_mission = "入职第一年必须完成的 3 个关键任务是什么？\n例：主导 2 个千万级金融客户的 OpenShift 替代方案打单；建立一套标准化英文交付材料。"
+    def_mission = "What are the 3 key outcomes this person must deliver in Year 1?\nE.g.: Lead 2 enterprise OpenShift replacement deals worth $1M+; build a standardized English-language delivery toolkit."
     def_tech = "Kubernetes, Docker, CI/CD, Go/Python, AWS/Azure"
-    def_breakers = "绝对不能接受的特质。例：无法流畅进行全英文技术路演；没有 ToB 软件企业级服务经验。"
-    def_selling = "为什么顶级人才要离开现在的舒适区来 Alauda？\n例：云原生出海红利期，直接挑战 Red Hat 的产品力，无天花板的薪酬体系。"
+    def_breakers = "Hard disqualifiers — no exceptions.\nE.g.: Cannot conduct full technical presentations in fluent English; no B2B enterprise software delivery experience."
+    def_selling = "Why should a top engineer leave their comfort zone to join Alauda?\nE.g.: Cloud-native global expansion wave; direct challenge against Red Hat; uncapped performance compensation."
     
     if selected_hc_label != "— 手动创建新职位 (不关联 HC) —":
         hc_data = hc_mapping[selected_hc_label]
@@ -430,20 +430,22 @@ elif page == "🎯 模块一：JD 逆向与自动寻源":
         def_selling = hc_data['selling_point']
         st.info(f"💡 已自动为您填入业务线提交的原始需求信息，您可以作为 HR 进行进一步的专业润色后再生成 JD。")
 
+    st.info("🇬🇧 **Language guidance:** Please fill in all fields below in **English**. English inputs give the AI access to a much richer global talent knowledge base and produce higher-quality JDs and Boolean search strings.")
+
     with st.form("jd_calibration_form", clear_on_submit=False):
-        st.markdown("### The Calibration Protocol (精准画像输入协议)")
-        
+        st.markdown("### The Calibration Protocol")
+
         col1, col2 = st.columns(2)
         with col1:
-            role_title = st.text_input("招聘岗位头衔", value=def_role)
-            location = st.text_input("目标工作地点", value=def_loc)
-            mission = st.text_area("1️⃣ The Mission (核心使命) *", value=def_mission, height=120)
-            
+            role_title = st.text_input("Role Title", value=def_role)
+            location = st.text_input("Target Location", value=def_loc)
+            mission = st.text_area("1️⃣ The Mission — Year-1 business objectives *", value=def_mission, height=120)
+
         with col2:
-            tech_stack = st.text_input("2️⃣ The Tech Stack (必须技术栈) *", value=def_tech)
-            deal_breakers = st.text_area("3️⃣ The Deal Breakers (绝对红线) *", value=def_breakers, height=120)
-            
-        selling_point = st.text_area("4️⃣ The Selling Point (核心卖点 / Alauda 优势)", value=def_selling, height=80)
+            tech_stack = st.text_input("2️⃣ The Tech Stack — required technologies *", value=def_tech)
+            deal_breakers = st.text_area("3️⃣ The Deal Breakers — hard disqualifiers *", value=def_breakers, height=120)
+
+        selling_point = st.text_area("4️⃣ The Selling Point — why join Alauda", value=def_selling, height=80)
         
         submitted = st.form_submit_button("🚀 运行系统：一键生成 JD 与寻源方案", type="primary", use_container_width=True)
         
@@ -482,17 +484,19 @@ elif page == "✉️ 模块二：自动化触达 (Outreach)":
     else:
         st.warning("建议先去【模块一】生成职位描述，或者在下方手动粘贴 JD 核心信息。")
 
-    with st.form("outreach_form"):
+    st.info(“🇬🇧 **Language guidance:** Fill in candidate background in **English** — the outreach copy targets overseas engineers and benefits most from English-language inputs.”)
+
+    with st.form(“outreach_form”):
         col1, col2 = st.columns([1, 1])
-        
+
         with col1:
-            st.markdown("**1. 目标职位信息 (JD)**")
-            jd_input = st.text_area("职位画像/核心挑战", value=default_jd_text, height=250)
-            
+            st.markdown(“**1. Job Context (JD)**”)
+            jd_input = st.text_area(“Job description / core mission”, value=default_jd_text, height=250)
+
         with col2:
-            st.markdown("**2. 候选人情报 (用于个性化“破冰”)**")
-            candidate_name = st.text_input("候选人称呼 (如: John Doe)")
-            candidate_bg = st.text_area("候选人亮点/背景 (从简历或领英提取)", placeholder="例如：曾在 Red Hat 工作 3 年，主导过当地银行的 OpenShift 落地项目；最近在 GitHub 上开源了一个 Kubernetes 调度插件...", height=170)
+            st.markdown(“**2. Candidate Intelligence** — for personalized opening”)
+            candidate_name = st.text_input(“Candidate name (e.g. John Doe)”)
+            candidate_bg = st.text_area(“Candidate highlights / background (from resume or LinkedIn)”, placeholder=”E.g.: 3 years at Red Hat, led OpenShift deployment at a major bank; recently open-sourced a Kubernetes scheduling plugin on GitHub with 200+ stars...”, height=170)
 
         submitted = st.form_submit_button("✉️ 生成英文触达话术 (Email & InMail)", type="primary", use_container_width=True)
 
@@ -516,14 +520,15 @@ elif page == "📄 模块三：简历智能初筛 (Resume Matcher)":
     col_jd, col_resume = st.columns([1, 1])
 
     with col_jd:
-        st.markdown("### 🎯 测量标尺：职位核心要求 (JD)")
+        st.markdown("### 🎯 Benchmark: Job Description")
         default_jd_for_match = ""
         if "generated_jd" in st.session_state:
             default_jd_for_match = st.session_state["generated_jd"]
-            st.info("💡 已自动继承【模块一】生成的 JD，您也可以手动修改。")
+            st.info("💡 Auto-loaded from Module 1. You may edit before running evaluation.")
         else:
-            st.warning("建议先去【模块一】生成职位描述，或在下方手动粘贴 JD。")
-        jd_for_match = st.text_area("粘贴或编辑 JD 核心内容", value=default_jd_for_match, height=350, key="resume_jd_input")
+            st.warning("Recommend generating a JD in Module 1 first, or paste an English JD below.")
+        st.caption("🇬🇧 Use an English JD for best results — the scoring rubric and resume comparison both perform better in a single language.")
+        jd_for_match = st.text_area("Paste or edit JD content", value=default_jd_for_match, height=350, key="resume_jd_input")
 
     with col_resume:
         st.markdown("### 📤 批量上传候选人简历")
@@ -569,12 +574,13 @@ elif page == "📝 模块四：结构化面试打分卡":
     default_jd_text = ""
     if "generated_jd" in st.session_state:
         default_jd_text = st.session_state["generated_jd"]
-        st.info("💡 系统已自动捕获您在【模块一】生成的 JD 文本。您可以直接使用该 JD，或进行手动修改。")
+        st.info("💡 Auto-loaded the JD generated in Module 1. You may edit before generating the scorecard.")
     else:
-        st.warning("您还未生成职位描述。建议先去【模块一】生成，或者在此处手动粘贴外部的职位要求。")
-        default_jd_text = "请在此粘贴完整的职位要求与业务背景..."
-        
-    jd_input = st.text_area("Job Description 内容源：", value=default_jd_text, height=350)
+        st.warning("No JD found. Recommend generating one in Module 1 first, or paste an English JD below.")
+        default_jd_text = ""
+
+    st.caption("🇬🇧 English JD recommended — BARS anchors and STAR questions are drawn from English-world interviewing literature and will be significantly more precise.")
+    jd_input = st.text_area("Job Description source:", value=default_jd_text, height=350)
     
     if st.button("⚖️ 拆解能力模型并生成 Scorecard", type="primary"):
         if not os.getenv("OPENAI_API_KEY"):
@@ -718,15 +724,23 @@ elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
                                 else:
                                     st.success(f"✅ 网页爬取成功（共 {len(raw_text)} 字符）。正在交由 AI 进行知识萃取...")
                                     
-                                    with st.spinner("🤖 AI 正在剥离废话，提取核心政策/情报..."):
-                                        prompt = f"""
-你是一个专业的出海合规与招聘情报提炼专家。我刚刚抓取了网页: {target_url}
-请从下面的【生肉文本】中，提取出针对【{region}】在【{category}】领域下的 1 到 3 条最核心干货规则。
-去除废话，用精炼的中文输出。如果没找到相关信息，请回答“提取失败”。
+                                    with st.spinner(“🤖 AI extracting core policy intelligence...”):
+                                        prompt = f”””
+You are an expert in global compliance and recruitment intelligence extraction.
+I have scraped the following webpage: {target_url}
 
-【生肉文本(节选)】:
+From the raw text below, extract 1 to 3 of the most actionable, concrete rules or facts
+relevant to [{region}] in the category [{category}].
+
+Requirements:
+- Strip all filler content, navigation text, and promotional language
+- Output precise, dated facts (salary thresholds, visa quotas, notice periods, etc.)
+- If no relevant information is found, respond exactly with: “EXTRACTION_FAILED”
+- Respond in English
+
+[Raw scraped text (truncated)]:
 {raw_text[:8000]}
-"""
+“””
                                         
                                         ai_result = agent.client.chat.completions.create(
                                             model=agent.model,
@@ -734,7 +748,7 @@ elif page == "🏗️ 模块六：知识库自生长 (0-to-1)":
                                             temperature=0.2
                                         ).choices[0].message.content
                                         
-                                        if "提取失败" in ai_result:
+                                        if "EXTRACTION_FAILED" in ai_result:
                                             st.warning("AI 未能在该网页中找到有价值的情报。")
                                         else:
                                             tags = f"{region}, Auto-Harvested, {category.split(' ')[0]}"
