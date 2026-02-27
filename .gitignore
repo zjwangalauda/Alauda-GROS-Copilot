@@ -24,4 +24,14 @@ venv/
 .streamlit/secrets.toml
 
 # Streamlit logs/cache (Optional, but config.toml should be kept)
-# .streamlit/ 
+# .streamlit/
+
+# Runtime-generated data (rebuilt at runtime, should not be committed)
+data/faiss_index/
+data/generated/
+data/candidates.json
+data/hc_requests.json
+data/playbook_fragments.json
+
+# Pytest
+.pytest_cache/
