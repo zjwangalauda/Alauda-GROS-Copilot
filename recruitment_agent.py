@@ -5,7 +5,7 @@ from openai import OpenAI, RateLimitError, APITimeoutError, APIConnectionError
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, before_sleep_log, after_log
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +60,14 @@ Company: Alauda (灵雀云)
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
         reraise=True,
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        after=after_log(logger, logging.DEBUG),
     )
     def _call_llm(self, *, model, messages, temperature):
         """Call the LLM with automatic retry on transient errors."""
+        attempt = self._call_llm.retry.statistics.get("attempt_number", 1)
+        if attempt > 1:
+            logger.warning("LLM call attempt %d/3 (model=%s)", attempt, model)
         return self.client.chat.completions.create(
             model=model,
             messages=messages,

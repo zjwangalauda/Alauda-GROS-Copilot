@@ -91,12 +91,19 @@ for _col_idx, _stage in enumerate(_display_stages):
             _next_stages = [s for s in PIPELINE_STAGES if s != _stage and s != "Rejected"]
             _move_to = st.selectbox("→", _next_stages, key=f"move_{_cand['id']}", label_visibility="collapsed")
             _move_note = st.text_input("备注", key=f"note_{_cand['id']}", placeholder="backward move requires note", label_visibility="collapsed")
-            if st.button("移动", key=f"mv_{_cand['id']}", use_container_width=True):
-                try:
-                    cm.move_stage(_cand["id"], _move_to, note=_move_note)
-                    st.rerun()
-                except ValueError as e:
-                    st.error(str(e))
+            _act_cols = st.columns([1, 1])
+            with _act_cols[0]:
+                if st.button("移动", key=f"mv_{_cand['id']}", use_container_width=True):
+                    try:
+                        cm.move_stage(_cand["id"], _move_to, note=_move_note)
+                        st.rerun()
+                    except ValueError as e:
+                        st.error(str(e))
+            with _act_cols[1]:
+                if _stage != "Rejected":
+                    if st.button("Reject", key=f"rej_{_cand['id']}", use_container_width=True, type="secondary"):
+                        cm.move_stage(_cand["id"], "Rejected", note=_move_note or "Rejected from kanban")
+                        st.rerun()
 
 # --- 候选人详情 & 备注 ---
 st.markdown("---")
