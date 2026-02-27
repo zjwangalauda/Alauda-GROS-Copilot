@@ -79,3 +79,31 @@ def test_persistence(cm):
     cm2 = CandidateManager(db_path=cm.db_path)
     assert len(cm2.get_all()) == 1
     assert cm2.get_all()[0]["stage"] == "Contacted"
+
+
+def test_backward_move_requires_note(cm):
+    """Moving backward (e.g. Interview → Phone Screen) without a note raises ValueError."""
+    c = cm.add_candidate(name="Ivy", role="Dev")
+    cm.move_stage(c["id"], "Interview")
+    with pytest.raises(ValueError, match="note is required"):
+        cm.move_stage(c["id"], "Phone Screen")
+
+
+def test_backward_move_with_note_succeeds(cm):
+    """Moving backward with a note is allowed."""
+    c = cm.add_candidate(name="Jack", role="Dev")
+    cm.move_stage(c["id"], "Interview")
+    result = cm.move_stage(c["id"], "Phone Screen", note="Re-screen requested by hiring manager")
+    assert result is True
+    updated = [x for x in cm.get_all() if x["id"] == c["id"]][0]
+    assert updated["stage"] == "Phone Screen"
+
+
+def test_move_to_rejected_always_allowed(cm):
+    """Moving to Rejected from any stage is always allowed, even without a note."""
+    c = cm.add_candidate(name="Kate", role="Dev")
+    cm.move_stage(c["id"], "Interview")
+    result = cm.move_stage(c["id"], "Rejected")
+    assert result is True
+    updated = [x for x in cm.get_all() if x["id"] == c["id"]][0]
+    assert updated["stage"] == "Rejected"

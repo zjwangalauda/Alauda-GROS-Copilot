@@ -6,6 +6,12 @@ from datetime import datetime
 
 HC_VALID_STATUSES = {"Pending", "Approved", "Rejected"}
 
+HC_TRANSITIONS = {
+    "Pending":  {"Approved", "Rejected"},
+    "Approved": set(),   # terminal
+    "Rejected": set(),   # terminal
+}
+
 class HCManager:
     """
     HC (Headcount) 管理器，负责处理业务部门的需求申请与HR的审批逻辑。
@@ -58,11 +64,18 @@ class HCManager:
         return req_id
 
     def update_status(self, req_id, new_status):
-        """HR 审批 HC。Returns True on success, raises ValueError on invalid status."""
+        """HR 审批 HC。Returns True on success, raises ValueError on invalid status/transition."""
         if new_status not in HC_VALID_STATUSES:
             raise ValueError(f"Invalid HC status '{new_status}'. Must be one of: {HC_VALID_STATUSES}")
         for req in self.requests:
             if req["id"] == req_id:
+                current = req["status"]
+                allowed = HC_TRANSITIONS.get(current, set())
+                if new_status not in allowed:
+                    raise ValueError(
+                        f"Cannot transition HC from '{current}' to '{new_status}'. "
+                        f"Allowed transitions: {allowed or 'none (terminal state)'}"
+                    )
                 req["status"] = new_status
                 self._save_requests()
                 return True

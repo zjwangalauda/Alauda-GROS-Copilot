@@ -1,5 +1,6 @@
 import html
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import streamlit as st
 
@@ -44,17 +45,50 @@ if st.button("🚀 启动硬核评估 (AI 算分卡)", type="primary", use_conta
     else:
         st.markdown("---")
         st.markdown("### 📊 评估结果")
-        for i, resume_file in enumerate(uploaded_resumes):
+
+        # Phase 1 (serial): parse all uploaded files
+        parsed = []
+        for resume_file in uploaded_resumes:
             file_bytes = resume_file.read()
             file_name = resume_file.name
-            with st.spinner(f"🤖 正在评估第 {i+1}/{len(uploaded_resumes)} 份简历：{file_name}..."):
-                resume_text = agent.extract_text_from_file(file_name, file_bytes)
-                if resume_text.startswith("File parsing failed") or resume_text.startswith("Unsupported file format"):
-                    st.error(f"❌ {file_name}: {resume_text}")
-                    continue
-                result = agent.evaluate_resume(jd_for_match, resume_text)
+            resume_text = agent.extract_text_from_file(file_name, file_bytes)
+            parsed.append((file_name, resume_text))
 
+        # Phase 2 (parallel): evaluate resumes concurrently
+        progress_bar = st.progress(0, text="🤖 正在并行评估简历...")
+        results = {}  # idx -> result string
+        error_indices = set()
+
+        def _evaluate(idx, name, text):
+            return idx, agent.evaluate_resume(jd_for_match, text)
+
+        completed_count = 0
+        total = len(parsed)
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {}
+            for idx, (file_name, resume_text) in enumerate(parsed):
+                if resume_text.startswith("File parsing failed") or resume_text.startswith("Unsupported file format"):
+                    error_indices.add(idx)
+                    results[idx] = resume_text
+                    completed_count += 1
+                    continue
+                fut = executor.submit(_evaluate, idx, file_name, resume_text)
+                futures[fut] = idx
+
+            for fut in as_completed(futures):
+                idx, result = fut.result()
+                results[idx] = result
+                completed_count += 1
+                progress_bar.progress(completed_count / total, text=f"🤖 已完成 {completed_count}/{total} 份简历评估")
+
+        progress_bar.empty()
+
+        # Phase 3 (serial): display results in original upload order
+        for idx, (file_name, _) in enumerate(parsed):
+            if idx in error_indices:
+                st.error(f"❌ {file_name}: {results[idx]}")
+                continue
             with st.expander(f"📄 {file_name}", expanded=True):
-                st.markdown(f'<div style="background-color: #FFFFFF; padding: 20px; border-radius: 8px; border: 1px solid #E5E7EB;">{html.escape(result)}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="background-color: #FFFFFF; padding: 20px; border-radius: 8px; border: 1px solid #E5E7EB;">{html.escape(results[idx])}</div>', unsafe_allow_html=True)
 
         st.success(f"✅ 全部 {len(uploaded_resumes)} 份简历评估完毕！")

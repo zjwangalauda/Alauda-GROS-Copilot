@@ -72,3 +72,19 @@ def test_persistence(hc_manager):
     assert len(mgr2.get_all_requests()) == 1
     assert mgr2.get_all_requests()[0]["id"] == req_id
     assert mgr2.get_all_requests()[0]["status"] == "Approved"
+
+
+def test_transition_from_approved_blocked(hc_manager):
+    """Approved is a terminal state — cannot transition to anything."""
+    req_id = hc_manager.submit_request(**SAMPLE_KWARGS)
+    hc_manager.update_status(req_id, "Approved")
+    with pytest.raises(ValueError, match="terminal state"):
+        hc_manager.update_status(req_id, "Pending")
+
+
+def test_transition_from_rejected_blocked(hc_manager):
+    """Rejected is a terminal state — cannot transition to anything."""
+    req_id = hc_manager.submit_request(**SAMPLE_KWARGS)
+    hc_manager.update_status(req_id, "Rejected")
+    with pytest.raises(ValueError, match="terminal state"):
+        hc_manager.update_status(req_id, "Approved")

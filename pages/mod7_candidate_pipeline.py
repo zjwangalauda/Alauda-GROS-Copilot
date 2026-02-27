@@ -88,14 +88,15 @@ for _col_idx, _stage in enumerate(_display_stages):
                 unsafe_allow_html=True,
             )
             # Action buttons per card
-            _btn_cols = st.columns([1, 1])
-            with _btn_cols[0]:
-                _next_stages = [s for s in PIPELINE_STAGES if s != _stage and s != "Rejected"]
-                _move_to = st.selectbox("→", _next_stages, key=f"move_{_cand['id']}", label_visibility="collapsed")
-            with _btn_cols[1]:
-                if st.button("移动", key=f"mv_{_cand['id']}", use_container_width=True):
-                    cm.move_stage(_cand["id"], _move_to)
+            _next_stages = [s for s in PIPELINE_STAGES if s != _stage and s != "Rejected"]
+            _move_to = st.selectbox("→", _next_stages, key=f"move_{_cand['id']}", label_visibility="collapsed")
+            _move_note = st.text_input("备注", key=f"note_{_cand['id']}", placeholder="backward move requires note", label_visibility="collapsed")
+            if st.button("移动", key=f"mv_{_cand['id']}", use_container_width=True):
+                try:
+                    cm.move_stage(_cand["id"], _move_to, note=_move_note)
                     st.rerun()
+                except ValueError as e:
+                    st.error(str(e))
 
 # --- 候选人详情 & 备注 ---
 st.markdown("---")

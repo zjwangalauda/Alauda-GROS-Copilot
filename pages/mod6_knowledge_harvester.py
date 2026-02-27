@@ -66,28 +66,7 @@ with col1:
                                 st.success(f"✅ 网页爬取成功（共 {len(raw_text)} 字符）。正在交由 AI 进行知识萃取...")
 
                                 with st.spinner("🤖 AI extracting core policy intelligence..."):
-                                    prompt = f"""
-You are an expert in global compliance and recruitment intelligence extraction.
-I have scraped the following webpage: {target_url}
-
-From the raw text below, extract 1 to 3 of the most actionable, concrete rules or facts
-relevant to [{region}] in the category [{category}].
-
-Requirements:
-- Strip all filler content, navigation text, and promotional language
-- Output precise, dated facts (salary thresholds, visa quotas, notice periods, etc.)
-- If no relevant information is found, respond exactly with: "EXTRACTION_FAILED"
-- Respond in English
-
-[Raw scraped text (truncated)]:
-{raw_text[:8000]}
-"""
-
-                                    ai_result = agent.client.chat.completions.create(
-                                        model=agent.strong_model,
-                                        messages=[{"role": "user", "content": prompt}],
-                                        temperature=0.2
-                                    ).choices[0].message.content
+                                    ai_result = agent.extract_web_knowledge(target_url, region, category, raw_text)
 
                                     if "EXTRACTION_FAILED" in ai_result:
                                         st.warning("AI 未能在该网页中找到有价值的情报。")

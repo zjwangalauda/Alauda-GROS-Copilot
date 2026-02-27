@@ -1,9 +1,11 @@
 import io
 import logging
 from pypdf import PdfReader
-from openai import OpenAI
+from openai import OpenAI, RateLimitError, APITimeoutError, APIConnectionError
 import os
 from dotenv import load_dotenv
+from pydantic import BaseModel
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +13,15 @@ load_dotenv(override=True)
 
 # ~200k chars ≈ ~50k tokens — safe ceiling for most LLM context windows
 MAX_INPUT_CHARS = 200_000
+
+
+class TranslatedHCFields(BaseModel):
+    role_title: str
+    location: str
+    mission: str
+    tech_stack: str
+    deal_breakers: str
+    selling_point: str
 
 class RecruitmentAgent:
     def __init__(self):
@@ -43,6 +54,20 @@ Company: Alauda (灵雀云)
 3. Structured Interview Design: BARS (Behaviorally Anchored Rating Scale) scorecards that eliminate subjectivity.
 4. Minimalist Output: No fluff — only actionable tables, search strings, and structured templates.
 """
+
+    @retry(
+        retry=retry_if_exception_type((RateLimitError, APITimeoutError, APIConnectionError)),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
+    def _call_llm(self, *, model, messages, temperature):
+        """Call the LLM with automatic retry on transient errors."""
+        return self.client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=temperature,
+        )
 
     def generate_jd_and_xray(self, role_title, location, mission, tech_stack, deal_breakers, selling_point):
         """Generate high-conversion JD + X-Ray Boolean search strings."""
@@ -83,7 +108,7 @@ HR staff can easily modify and reuse them.
 """
 
         try:
-            response = self.client.chat.completions.create(
+            response = self._call_llm(
                 model=self.strong_model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
@@ -124,7 +149,7 @@ For each dimension provide:
 """
 
         try:
-            response = self.client.chat.completions.create(
+            response = self._call_llm(
                 model=self.strong_model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
@@ -169,7 +194,7 @@ to attract elite senior engineers.
 """
 
         try:
-            response = self.client.chat.completions.create(
+            response = self._call_llm(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
@@ -246,7 +271,7 @@ No gut-feeling scores — strict mathematical addition only. Show your reasoning
 """
 
         try:
-            response = self.client.chat.completions.create(
+            response = self._call_llm(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
@@ -287,7 +312,7 @@ Do NOT fabricate, generalize, or infer beyond what is documented.
 """
 
         try:
-            response = self.client.chat.completions.create(
+            response = self._call_llm(
                 model=self.model,
                 messages=[
                     {"role": "user", "content": prompt}
@@ -319,7 +344,7 @@ Input JSON:
 {_json.dumps(fields, ensure_ascii=False, indent=2)}
 """
         try:
-            response = self.client.chat.completions.create(
+            response = self._call_llm(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
@@ -329,10 +354,38 @@ Input JSON:
             if content.startswith("```"):
                 content = content[content.find("\n") + 1:]
                 content = content[:content.rfind("```")].strip()
-            return _json.loads(content)
+            parsed = TranslatedHCFields.model_validate_json(content)
+            return parsed.model_dump()
         except Exception:
             logger.warning("HC field translation failed, returning originals", exc_info=True)
             return fields
+
+    def extract_web_knowledge(self, target_url, region, category, raw_text):
+        """Extract structured knowledge from scraped web text using LLM."""
+        if not self.client:
+            return None
+        prompt = f"""
+You are an expert in global compliance and recruitment intelligence extraction.
+I have scraped the following webpage: {target_url}
+
+From the raw text below, extract 1 to 3 of the most actionable, concrete rules or facts
+relevant to [{region}] in the category [{category}].
+
+Requirements:
+- Strip all filler content, navigation text, and promotional language
+- Output precise, dated facts (salary thresholds, visa quotas, notice periods, etc.)
+- If no relevant information is found, respond exactly with: "EXTRACTION_FAILED"
+- Respond in English
+
+[Raw scraped text (truncated)]:
+{raw_text[:8000]}
+"""
+        response = self._call_llm(
+            model=self.strong_model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+        )
+        return response.choices[0].message.content
 
     def extract_text_from_file(self, file_name, file_bytes):
         """Parse uploaded resume file (PDF, DOCX, or TXT) and return extracted text."""

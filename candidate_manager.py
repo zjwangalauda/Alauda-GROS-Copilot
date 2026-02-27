@@ -73,12 +73,20 @@ class CandidateManager:
         return candidate
 
     def move_stage(self, candidate_id, new_stage, note=""):
-        """Move a candidate to a new pipeline stage. Raises ValueError on invalid stage."""
+        """Move a candidate to a new pipeline stage. Raises ValueError on invalid stage or missing note for backward/rejected moves."""
         if new_stage not in PIPELINE_STAGES:
             raise ValueError(f"Invalid pipeline stage '{new_stage}'. Must be one of: {PIPELINE_STAGES}")
         for c in self.candidates:
             if c["id"] == candidate_id:
                 old_stage = c["stage"]
+                old_idx = PIPELINE_STAGES.index(old_stage)
+                new_idx = PIPELINE_STAGES.index(new_stage)
+                is_backward = new_idx < old_idx and new_stage != "Rejected"
+                is_leaving_rejected = old_stage == "Rejected" and new_stage != "Rejected"
+                if (is_backward or is_leaving_rejected) and not note.strip():
+                    raise ValueError(
+                        f"A note is required when moving backward (from '{old_stage}' to '{new_stage}')."
+                    )
                 c["stage"] = new_stage
                 c["updated_at"] = datetime.now().strftime("%Y-%m-%d")
                 c.setdefault("history", []).append({
