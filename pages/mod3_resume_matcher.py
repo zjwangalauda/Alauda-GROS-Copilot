@@ -76,8 +76,13 @@ if st.button("🚀 启动硬核评估 (AI 算分卡)", type="primary", use_conta
                 futures[fut] = idx
 
             for fut in as_completed(futures):
-                idx, result = fut.result()
-                results[idx] = result
+                try:
+                    idx, result = fut.result()
+                    results[idx] = result
+                except Exception as e:
+                    idx = futures[fut]
+                    results[idx] = f"❌ Evaluation failed: {str(e)}"
+                    error_indices.add(idx)
                 completed_count += 1
                 progress_bar.progress(completed_count / total, text=f"🤖 已完成 {completed_count}/{total} 份简历评估")
 

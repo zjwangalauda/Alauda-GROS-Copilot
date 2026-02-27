@@ -107,3 +107,21 @@ def test_move_to_rejected_always_allowed(cm):
     assert result is True
     updated = [x for x in cm.get_all() if x["id"] == c["id"]][0]
     assert updated["stage"] == "Rejected"
+
+
+def test_move_out_of_rejected_requires_note(cm):
+    """Moving out of Rejected without a note raises ValueError."""
+    c = cm.add_candidate(name="Leo", role="Dev")
+    cm.move_stage(c["id"], "Rejected")
+    with pytest.raises(ValueError, match="note is required"):
+        cm.move_stage(c["id"], "Phone Screen")
+
+
+def test_move_out_of_rejected_with_note_succeeds(cm):
+    """Moving out of Rejected with a note is allowed."""
+    c = cm.add_candidate(name="Mia", role="Dev")
+    cm.move_stage(c["id"], "Rejected")
+    result = cm.move_stage(c["id"], "Phone Screen", note="Re-evaluated by hiring manager")
+    assert result is True
+    updated = [x for x in cm.get_all() if x["id"] == c["id"]][0]
+    assert updated["stage"] == "Phone Screen"

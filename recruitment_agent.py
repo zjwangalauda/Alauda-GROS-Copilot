@@ -380,12 +380,15 @@ Requirements:
 [Raw scraped text (truncated)]:
 {raw_text[:8000]}
 """
-        response = self._call_llm(
-            model=self.strong_model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.2,
-        )
-        return response.choices[0].message.content
+        try:
+            response = self._call_llm(
+                model=self.strong_model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2,
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"❌ Knowledge extraction failed: {str(e)}"
 
     def extract_text_from_file(self, file_name, file_bytes):
         """Parse uploaded resume file (PDF, DOCX, or TXT) and return extracted text."""
