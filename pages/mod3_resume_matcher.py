@@ -1,0 +1,60 @@
+import html
+import os
+
+import streamlit as st
+
+from app_shared import get_agent, load_latest_jd
+
+st.markdown('<div class="main-title">📄 猎头简历智能雷达 (Resume Matcher)</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">解决 HR 看不懂海外技术简历、容易被候选人过度包装忽悠的问题。AI 基于严苛的【算分卡法则】进行防漂移量化打分。</div>', unsafe_allow_html=True)
+
+agent = get_agent()
+
+# 左右两栏布局：左边 JD，右边简历上传
+col_jd, col_resume = st.columns([1, 1])
+
+with col_jd:
+    st.markdown("### 🎯 Benchmark: Job Description")
+    default_jd_for_match, jd_msg = load_latest_jd()
+    if default_jd_for_match and jd_msg:
+        st.info(jd_msg)
+    elif not default_jd_for_match:
+        st.warning("Recommend generating a JD in Module 1 first, or paste an English JD below.")
+    st.caption("🇬🇧 Use an English JD for best results — the scoring rubric and resume comparison both perform better in a single language.")
+    jd_for_match = st.text_area("Paste or edit JD content", value=default_jd_for_match, height=350, key="resume_jd_input")
+
+with col_resume:
+    st.markdown("### 📤 批量上传候选人简历")
+    uploaded_resumes = st.file_uploader(
+        "支持 PDF / TXT 格式，可同时上传多份",
+        type=["pdf", "docx", "txt"],
+        accept_multiple_files=True,
+        key="resume_uploader"
+    )
+    if uploaded_resumes:
+        st.success(f"已上传 {len(uploaded_resumes)} 份简历，点击下方按钮开始评估。")
+
+if st.button("🚀 启动硬核评估 (AI 算分卡)", type="primary", use_container_width=True):
+    if not jd_for_match.strip():
+        st.error("请先在左侧填入职位描述 (JD) 作为评估基准！")
+    elif not uploaded_resumes:
+        st.error("请先在右侧上传至少一份候选人简历！")
+    elif not os.getenv("OPENAI_API_KEY"):
+        st.error("您尚未配置大模型 API Key。")
+    else:
+        st.markdown("---")
+        st.markdown("### 📊 评估结果")
+        for i, resume_file in enumerate(uploaded_resumes):
+            file_bytes = resume_file.read()
+            file_name = resume_file.name
+            with st.spinner(f"🤖 正在评估第 {i+1}/{len(uploaded_resumes)} 份简历：{file_name}..."):
+                resume_text = agent.extract_text_from_file(file_name, file_bytes)
+                if resume_text.startswith("File parsing failed") or resume_text.startswith("Unsupported file format"):
+                    st.error(f"❌ {file_name}: {resume_text}")
+                    continue
+                result = agent.evaluate_resume(jd_for_match, resume_text)
+
+            with st.expander(f"📄 {file_name}", expanded=True):
+                st.markdown(f'<div style="background-color: #FFFFFF; padding: 20px; border-radius: 8px; border: 1px solid #E5E7EB;">{html.escape(result)}</div>', unsafe_allow_html=True)
+
+        st.success(f"✅ 全部 {len(uploaded_resumes)} 份简历评估完毕！")
