@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import streamlit as st
@@ -5,6 +6,8 @@ from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
+
+logger = logging.getLogger(__name__)
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -27,6 +30,7 @@ class RAGSystem:
                 )
                 self._embedding_mode = "vector"
             except Exception:
+                logger.warning("Failed to initialize OpenAI embeddings, falling back to keyword search", exc_info=True)
                 self.embeddings = KeywordSearchEmbeddings()
                 self._embedding_mode = "keyword"
         else:
@@ -55,8 +59,7 @@ class RAGSystem:
                 )
                 return True
             except Exception:
-                # Index corrupt or incompatible — fall through to rebuild
-                pass
+                logger.warning("FAISS index corrupt or incompatible — rebuilding", exc_info=True)
 
         # --- Build index from source documents ---
         docs = []
@@ -70,13 +73,13 @@ class RAGSystem:
                     loader = PyPDFLoader(file_path)
                     docs.extend(loader.load())
                 except Exception:
-                    pass
+                    logger.warning("Failed to load PDF: %s", file_path, exc_info=True)
             elif filename.endswith(".md"):
                 try:
                     loader = TextLoader(file_path, encoding="utf-8")
                     docs.extend(loader.load())
                 except Exception:
-                    pass
+                    logger.warning("Failed to load Markdown: %s", file_path, exc_info=True)
 
         if not docs:
             return False
@@ -100,6 +103,7 @@ class RAGSystem:
                 self.vector_store.save_local(FAISS_INDEX_PATH)
             return True
         except Exception:
+            logger.error("Failed to build FAISS vector store", exc_info=True)
             return False
 
     def retrieve(self, query, k=5):

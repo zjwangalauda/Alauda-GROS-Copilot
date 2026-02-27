@@ -1,11 +1,13 @@
+import logging
 import streamlit as st
+import html
 import requests
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 # 强制覆盖环境变量（本地开发走 .env）
 load_dotenv(override=True)
@@ -17,7 +19,7 @@ try:
         if val:
             os.environ[key] = val
 except Exception:
-    pass  # 本地开发没有 secrets.toml 时静默跳过
+    logger.debug("No secrets.toml found — using .env for local development")
 
 from recruitment_agent import RecruitmentAgent
 from knowledge_manager import KnowledgeManager
@@ -254,7 +256,7 @@ def _check_password():
     try:
         _pwd = st.secrets.get("APP_PASSWORD", "")
     except Exception:
-        pass
+        logger.debug("Could not read APP_PASSWORD from secrets, falling back to env")
     if not _pwd:
         _pwd = os.environ.get("APP_PASSWORD", "")
     # No password configured → open access (dev mode)
@@ -550,8 +552,8 @@ elif page == "🎯 模块一：JD 逆向与自动寻源":
                 st.success("✅ 生成完成！已自动保存 — 刷新页面或切换模块后仍可在各模块中直接使用。")
                 
                 st.markdown("### 📄 最终交付物")
-                st.markdown(f'<div style="background-color: #FFFFFF; padding: 30px; border-radius: 8px; border: 1px solid #E5E7EB;">{result}</div>', unsafe_allow_html=True)
-                
+                st.markdown(f'<div style="background-color: #FFFFFF; padding: 30px; border-radius: 8px; border: 1px solid #E5E7EB;">{html.escape(result)}</div>', unsafe_allow_html=True)
+
                 if result:
                     st.download_button(
                         label="📥 下载 Markdown 源文件",
@@ -620,7 +622,7 @@ elif page == "✉️ 模块二：自动化触达 (Outreach)":
                 outreach_result = agent.generate_outreach_message(jd_input, candidate_info)
                 
                 st.success("✅ 触达文案生成完毕！您可以直接复制发送。")
-                st.markdown(f'<div style="background-color: #FFFFFF; padding: 30px; border-radius: 8px; border: 1px solid #E5E7EB;">{outreach_result}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="background-color: #FFFFFF; padding: 30px; border-radius: 8px; border: 1px solid #E5E7EB;">{html.escape(outreach_result)}</div>', unsafe_allow_html=True)
 
 
 elif page == "📄 模块三：简历智能初筛 (Resume Matcher)":
@@ -674,13 +676,13 @@ elif page == "📄 模块三：简历智能初筛 (Resume Matcher)":
                 file_name = resume_file.name
                 with st.spinner(f"🤖 正在评估第 {i+1}/{len(uploaded_resumes)} 份简历：{file_name}..."):
                     resume_text = agent.extract_text_from_file(file_name, file_bytes)
-                    if resume_text.startswith("文件解析失败") or resume_text == "Unsupported file format.":
+                    if resume_text.startswith("File parsing failed") or resume_text.startswith("Unsupported file format"):
                         st.error(f"❌ {file_name}: {resume_text}")
                         continue
                     result = agent.evaluate_resume(jd_for_match, resume_text)
 
                 with st.expander(f"📄 {file_name}", expanded=True):
-                    st.markdown(f'<div style="background-color: #FFFFFF; padding: 20px; border-radius: 8px; border: 1px solid #E5E7EB;">{result}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="background-color: #FFFFFF; padding: 20px; border-radius: 8px; border: 1px solid #E5E7EB;">{html.escape(result)}</div>', unsafe_allow_html=True)
 
             st.success(f"✅ 全部 {len(uploaded_resumes)} 份简历评估完毕！")
 
@@ -715,7 +717,7 @@ elif page == "📝 模块四：结构化面试打分卡":
                 st.success("✅ 评分卡建立完毕！请在面试前分发给所有面试官统一评价口径。")
                 
                 st.markdown("### 📊 结构化打分板")
-                st.markdown(f'<div style="background-color: #FFFFFF; padding: 20px; border-radius: 8px; border: 1px solid #E5E7EB;">{scorecard_result}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="background-color: #FFFFFF; padding: 20px; border-radius: 8px; border: 1px solid #E5E7EB;">{html.escape(scorecard_result)}</div>', unsafe_allow_html=True)
                 
                 if scorecard_result:
                     st.download_button(
@@ -841,7 +843,7 @@ elif page == "📊 招聘数据看板":
             _days = (_updated - _created).days
             _ttf_rows.append({"候选人": _c["name"], "岗位": _c["role"], "天数": _days})
         except Exception:
-            pass
+            logger.warning("Failed to compute time-to-fill for candidate %s", _c.get("id", "unknown"), exc_info=True)
     if _ttf_rows:
         _ttf_df = pd.DataFrame(_ttf_rows)
         st.dataframe(_ttf_df, use_container_width=True)
@@ -968,7 +970,7 @@ elif page == "🏗️ 模块六：知识库自生长（待更新）":
                         with st.spinner(f"正在爬取 {target_url} 的内容..."):
                             try:
                                 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8', 'Accept-Language': 'en-US,en;q=0.5'}
-                                response = requests.get(target_url, headers=headers, timeout=10, verify=False)
+                                response = requests.get(target_url, headers=headers, timeout=10, verify=True)
                                 response.raise_for_status()
                                 
                                 soup = BeautifulSoup(response.text, 'html.parser')
@@ -1069,10 +1071,10 @@ Requirements:
                     st.markdown(f"""
                     <div style="background-color: #FFFFFF; padding: 15px; border-radius: 6px; border: 1px solid #E2E8F0; margin-bottom: 10px; border-left: 3px solid {_border_color};">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <strong>{f['region']} - {f['category']}</strong>
-                            <span style="color: #6B7280; font-size: 0.8em;">{f['date']}{_exp_label}</span>
+                            <strong>{html.escape(f['region'])} - {html.escape(f['category'])}</strong>
+                            <span style="color: #6B7280; font-size: 0.8em;">{html.escape(f['date'])}{_exp_label}</span>
                         </div>
-                        <p style="color: #4B5563; font-size: 0.9em; margin: 0;">{f['content']}</p>
+                        <p style="color: #4B5563; font-size: 0.9em; margin: 0;">{html.escape(f['content'])}</p>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -1151,14 +1153,14 @@ elif page == "👥 模块七：候选人 Pipeline 看板":
                     unsafe_allow_html=True,
                 )
             for _cand in _stage_candidates:
-                _score_badge = f"<span style='background:#EEF2FF;color:#4338CA;padding:1px 6px;border-radius:10px;font-size:0.72rem;'>Score: {_cand['score']}</span>" if _cand.get("score") is not None else ""
+                _score_badge = f"<span style='background:#EEF2FF;color:#4338CA;padding:1px 6px;border-radius:10px;font-size:0.72rem;'>Score: {html.escape(str(_cand['score']))}</span>" if _cand.get("score") is not None else ""
                 st.markdown(
                     f"<div style='background:#fff;border:1px solid #E2E8F0;border-radius:6px;"
                     f"padding:10px 12px;margin-top:4px;'>"
-                    f"<div style='font-weight:600;font-size:0.9rem;'>{_cand['name']}</div>"
-                    f"<div style='color:#64748B;font-size:0.78rem;margin:2px 0;'>{_cand['role']}</div>"
+                    f"<div style='font-weight:600;font-size:0.9rem;'>{html.escape(_cand['name'])}</div>"
+                    f"<div style='color:#64748B;font-size:0.78rem;margin:2px 0;'>{html.escape(_cand['role'])}</div>"
                     f"<div style='margin-top:4px;'>{_score_badge}</div>"
-                    f"<div style='color:#94A3B8;font-size:0.72rem;margin-top:4px;'>Updated {_cand['updated_at']}</div>"
+                    f"<div style='color:#94A3B8;font-size:0.72rem;margin-top:4px;'>Updated {html.escape(_cand['updated_at'])}</div>"
                     f"</div>",
                     unsafe_allow_html=True,
                 )

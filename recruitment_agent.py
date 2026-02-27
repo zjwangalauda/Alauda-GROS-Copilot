@@ -1,10 +1,16 @@
 import io
+import logging
 from pypdf import PdfReader
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
+logger = logging.getLogger(__name__)
+
 load_dotenv(override=True)
+
+# ~200k chars ≈ ~50k tokens — safe ceiling for most LLM context windows
+MAX_INPUT_CHARS = 200_000
 
 class RecruitmentAgent:
     def __init__(self):
@@ -42,6 +48,10 @@ Company: Alauda (灵雀云)
         """Generate high-conversion JD + X-Ray Boolean search strings."""
         if not self.client:
             return "⚠️ OPENAI_API_KEY not configured. Please set it in the .env file."
+
+        total_len = sum(len(s) for s in [role_title, location, mission, tech_stack, deal_breakers, selling_point])
+        if total_len > MAX_INPUT_CHARS:
+            return f"⚠️ Input too long ({total_len:,} chars). Please shorten to under {MAX_INPUT_CHARS:,} chars."
 
         prompt = f"""
 Based on the following inputs, generate two core deliverables:
@@ -90,6 +100,9 @@ HR staff can easily modify and reuse them.
         if not self.client:
             return "⚠️ OPENAI_API_KEY not configured."
 
+        if len(jd_text) > MAX_INPUT_CHARS:
+            return f"⚠️ JD text too long ({len(jd_text):,} chars). Please shorten to under {MAX_INPUT_CHARS:,} chars."
+
         prompt = f"""
 Design a Structured Interview Scorecard (BARS) and STAR Question Bank based on the JD below.
 The goal is to eliminate subjective interviewing and align all interviewers to a single standard.
@@ -127,6 +140,10 @@ For each dimension provide:
         """Generate high-conversion cold outreach (Email + LinkedIn InMail)."""
         if not self.client:
             return "⚠️ OPENAI_API_KEY not configured."
+
+        total_len = len(jd_text) + len(candidate_info)
+        if total_len > MAX_INPUT_CHARS:
+            return f"⚠️ Input too long ({total_len:,} chars). Please shorten to under {MAX_INPUT_CHARS:,} chars."
 
         prompt = f"""
 You are a top-tier international tech headhunter. Write a high-conversion cold outreach message
@@ -168,6 +185,10 @@ to attract elite senior engineers.
         """Evaluate resume against JD using a hard 100-point quantitative rubric."""
         if not self.client:
             return "⚠️ OPENAI_API_KEY not configured."
+
+        total_len = len(jd_text) + len(resume_text)
+        if total_len > MAX_INPUT_CHARS:
+            return f"⚠️ Input too long ({total_len:,} chars). Please shorten to under {MAX_INPUT_CHARS:,} chars."
 
         prompt = f"""
 You are an exceptionally rigorous and objective technical interviewer at Alauda.
@@ -242,6 +263,10 @@ No gut-feeling scores — strict mathematical addition only. Show your reasoning
         if not self.client:
             return "⚠️ OPENAI_API_KEY not configured."
 
+        total_len = len(query) + len(context_docs)
+        if total_len > MAX_INPUT_CHARS:
+            return f"⚠️ Input too long ({total_len:,} chars). Please shorten your query or reduce knowledge base size."
+
         prompt = f"""
 You are Alauda's Global Recruitment & Employer Brand Intelligence Advisor.
 Answer the user's question based STRICTLY on the Playbook knowledge segments provided below.
@@ -306,7 +331,8 @@ Input JSON:
                 content = content[:content.rfind("```")].strip()
             return _json.loads(content)
         except Exception:
-            return fields  # Fail silently — return originals
+            logger.warning("HC field translation failed, returning originals", exc_info=True)
+            return fields
 
     def extract_text_from_file(self, file_name, file_bytes):
         """Parse uploaded resume file (PDF, DOCX, or TXT) and return extracted text."""

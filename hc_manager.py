@@ -1,6 +1,10 @@
 import os
 import json
+import fcntl
+import uuid
 from datetime import datetime
+
+HC_VALID_STATUSES = {"Pending", "Approved", "Rejected"}
 
 class HCManager:
     """
@@ -16,18 +20,26 @@ class HCManager:
         if os.path.exists(self.db_path):
             try:
                 with open(self.db_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    fcntl.flock(f, fcntl.LOCK_SH)
+                    try:
+                        return json.load(f)
+                    finally:
+                        fcntl.flock(f, fcntl.LOCK_UN)
             except json.JSONDecodeError:
                 return []
         return []
 
     def _save_requests(self):
         with open(self.db_path, "w", encoding="utf-8") as f:
-            json.dump(self.requests, f, ensure_ascii=False, indent=2)
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                json.dump(self.requests, f, ensure_ascii=False, indent=2)
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
 
     def submit_request(self, department, role_title, location, urgency, mission, tech_stack, deal_breakers, selling_point):
         """业务线提交新的 HC 需求"""
-        req_id = f"HC_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        req_id = f"HC_{uuid.uuid4().hex[:12]}"
         hc_req = {
             "id": req_id,
             "date": datetime.now().strftime("%Y-%m-%d"),
@@ -46,7 +58,9 @@ class HCManager:
         return req_id
 
     def update_status(self, req_id, new_status):
-        """HR 审批 HC"""
+        """HR 审批 HC。Returns True on success, raises ValueError on invalid status."""
+        if new_status not in HC_VALID_STATUSES:
+            raise ValueError(f"Invalid HC status '{new_status}'. Must be one of: {HC_VALID_STATUSES}")
         for req in self.requests:
             if req["id"] == req_id:
                 req["status"] = new_status

@@ -1,6 +1,8 @@
 import os
 import json
+import fcntl
 import hashlib
+import uuid
 import streamlit as st
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -20,26 +22,34 @@ class KnowledgeManager:
 
     def _load_fragments(self):
         if os.path.exists(self.db_path):
-            with open(self.db_path, "r", encoding="utf-8") as f:
-                try:
-                    return json.load(f)
-                except json.JSONDecodeError:
-                    return []
+            try:
+                with open(self.db_path, "r", encoding="utf-8") as f:
+                    fcntl.flock(f, fcntl.LOCK_SH)
+                    try:
+                        return json.load(f)
+                    finally:
+                        fcntl.flock(f, fcntl.LOCK_UN)
+            except json.JSONDecodeError:
+                return []
         return []
 
     def _save_fragments(self):
         with open(self.db_path, "w", encoding="utf-8") as f:
-            json.dump(self.fragments, f, ensure_ascii=False, indent=2)
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                json.dump(self.fragments, f, ensure_ascii=False, indent=2)
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
 
     def add_fragment(self, region, category, content, tags="", source_url="", ttl_days=90):
         """Add a knowledge fragment. Returns (True, 'added') or (False, 'duplicate')."""
-        content_hash = hashlib.md5(content.strip().encode("utf-8")).hexdigest()[:12]
+        content_hash = hashlib.sha256(content.strip().encode("utf-8")).hexdigest()[:12]
         for existing in self.fragments:
             if existing.get("content_hash") == content_hash:
                 return False, "duplicate"
         expires_at = (datetime.now() + timedelta(days=ttl_days)).strftime("%Y-%m-%d")
         fragment = {
-            "id": f"frag_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "id": f"frag_{uuid.uuid4().hex[:12]}",
             "date": datetime.now().strftime("%Y-%m-%d"),
             "expires_at": expires_at,
             "content_hash": content_hash,

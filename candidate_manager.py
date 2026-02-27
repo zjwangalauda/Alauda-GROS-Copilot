@@ -1,5 +1,7 @@
 import os
 import json
+import fcntl
+import uuid
 from datetime import datetime
 
 PIPELINE_STAGES = [
@@ -31,21 +33,29 @@ class CandidateManager:
 
     def _load(self):
         if os.path.exists(self.db_path):
-            with open(self.db_path, "r", encoding="utf-8") as f:
-                try:
-                    return json.load(f)
-                except json.JSONDecodeError:
-                    return []
+            try:
+                with open(self.db_path, "r", encoding="utf-8") as f:
+                    fcntl.flock(f, fcntl.LOCK_SH)
+                    try:
+                        return json.load(f)
+                    finally:
+                        fcntl.flock(f, fcntl.LOCK_UN)
+            except json.JSONDecodeError:
+                return []
         return []
 
     def _save(self):
         with open(self.db_path, "w", encoding="utf-8") as f:
-            json.dump(self.candidates, f, ensure_ascii=False, indent=2)
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                json.dump(self.candidates, f, ensure_ascii=False, indent=2)
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
 
     def add_candidate(self, name, role, hc_id="", source="", linkedin_url="", notes=""):
         """Add a new candidate. Returns the new candidate dict."""
         candidate = {
-            "id": f"cand_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "id": f"cand_{uuid.uuid4().hex[:12]}",
             "name": name,
             "role": role,
             "hc_id": hc_id,
@@ -63,7 +73,9 @@ class CandidateManager:
         return candidate
 
     def move_stage(self, candidate_id, new_stage, note=""):
-        """Move a candidate to a new pipeline stage."""
+        """Move a candidate to a new pipeline stage. Raises ValueError on invalid stage."""
+        if new_stage not in PIPELINE_STAGES:
+            raise ValueError(f"Invalid pipeline stage '{new_stage}'. Must be one of: {PIPELINE_STAGES}")
         for c in self.candidates:
             if c["id"] == candidate_id:
                 old_stage = c["stage"]
