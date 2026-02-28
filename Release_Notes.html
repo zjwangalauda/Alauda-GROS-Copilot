@@ -40,9 +40,56 @@
 
 <div class="container">
 
+    <!-- V2.0 -->
+    <div class="card">
+        <span class="version-badge">V2.0 — Latest</span>
+        <h2>生产级加固：SQLite 迁移、安全防护、CI/CD 与容器化部署</h2>
+        <div class="date">2026-02-28</div>
+
+        <h3>🛡️ 安全加固 (Security Hardening)</h3>
+        <ul>
+            <li><strong>Prompt 注入防御</strong>：全部 7 个 LLM 方法中，所有用户输入均以 <code>&lt;user_input&gt;</code> XML 标签包裹隔离。System Prompt 末尾新增防御指令，明确标记标签内容为不可信数据，阻止恶意指令穿透。</li>
+            <li><strong>内容哈希升级</strong>：知识库去重哈希从 MD5 升级为 SHA-256，提升碰撞安全性。</li>
+            <li><strong>输入长度校验</strong>：所有 LLM 入口统一强制执行 200,000 字符上限，超限时前端即时反馈错误信息。</li>
+        </ul>
+
+        <h3>🗄️ 数据层重构：JSON → SQLite (Data Layer Migration)</h3>
+        <ul>
+            <li><strong>三大管理器全面迁移</strong>：HC 管理器、候选人管理器、知识库管理器从 JSON + fcntl 文件锁迁移至 <strong>SQLite WAL 模式</strong>，彻底消除并发读写冲突风险。</li>
+            <li><strong>单例连接池</strong>：新增 <code>db.py</code> 模块，提供线程安全的单例数据库连接，支持外键约束与 WAL 日志模式。</li>
+            <li><strong>自动数据迁移</strong>：系统启动时自动检测旧版 JSON 文件，若存在则一次性导入 SQLite，实现无缝升级。</li>
+            <li><strong>候选人历史记录</strong>：阶段流转历史从嵌套 JSON 数组改为独立的 <code>candidate_history</code> 关系表（1:N），支持级联删除。</li>
+        </ul>
+
+        <h3>🤖 AI 引擎增强 (LLM Engine Enhancements)</h3>
+        <ul>
+            <li><strong>自动重试机制</strong>：LLM 调用新增指数退避重试策略（<code>tenacity</code>），自动处理 RateLimitError / APITimeoutError / APIConnectionError，最多重试 3 次，等待时间 1-10 秒指数递增。</li>
+            <li><strong>Token 用量追踪</strong>：每次 LLM 调用后自动记录 prompt_tokens / completion_tokens / total_tokens 至内存日志（最近 50 条），招聘数据看板新增"近期 LLM 调用记录"面板，实时展示 Token 消耗。</li>
+            <li><strong>Pydantic 结构化输出</strong>：HC 字段翻译接口采用 Pydantic Schema 强类型校验，确保 LLM 输出 JSON 严格符合 6 字段预期结构。</li>
+        </ul>
+
+        <h3>📊 业务逻辑强化 (Business Logic Hardening)</h3>
+        <ul>
+            <li><strong>HC 状态机</strong>：审批流程引入有限状态机（Pending → Approved / Rejected），终态不可逆转，非法转换抛出明确异常。</li>
+            <li><strong>候选人阶段校验</strong>：向后移动阶段或从 Rejected 恢复时强制要求填写备注，防止误操作。</li>
+            <li><strong>看板一键淘汰</strong>：Kanban 卡片新增独立"Reject"按钮，支持快速标记淘汰候选人。</li>
+        </ul>
+
+        <h3>🏗️ 工程化基建 (Infrastructure)</h3>
+        <ul>
+            <li><strong>GitHub Actions CI/CD</strong>：新增 <code>.github/workflows/ci.yml</code>，每次 Push / PR 自动执行 <code>ruff</code> 代码检查 + <code>pytest</code> 全量测试（39 个用例），确保主干稳定。</li>
+            <li><strong>Docker 容器化</strong>：新增 <code>Dockerfile</code> + <code>.dockerignore</code>，基于 <code>python:3.11-slim</code> 的轻量化镜像，一条命令即可部署。</li>
+            <li><strong>CSS 分离</strong>：215 行内联 CSS 提取至独立 <code>assets/theme.css</code> 文件，UI 调整无需修改 Python 代码。</li>
+            <li><strong>类型标注</strong>：5 个核心模块的所有公共方法全面添加参数与返回值类型标注，提升 IDE 补全与重构安全性。</li>
+            <li><strong>测试套件</strong>：39 个单元测试覆盖 HC 管理器、候选人管理器、知识库管理器、LLM 重试逻辑、Pydantic 校验与网页知识提取。</li>
+            <li><strong>依赖版本锁定</strong>：<code>requirements.txt</code> 全部采用 <code>==</code> 精确版本锁定，避免部署时因上游更新导致不可复现的构建失败。</li>
+            <li><strong>README.md</strong>：新增标准项目 README，含功能概述、快速启动、项目结构与测试指南。</li>
+        </ul>
+    </div>
+
     <!-- V1.7 -->
     <div class="card">
-        <span class="version-badge">V1.7 — Latest</span>
+        <span class="version-badge old">V1.7</span>
         <h2>系统完整性跃升：候选人看板、DOCX 支持、知识时效与访问认证</h2>
         <div class="date">2026-02-27</div>
 

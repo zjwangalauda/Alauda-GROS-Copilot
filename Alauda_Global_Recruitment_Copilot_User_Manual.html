@@ -44,7 +44,7 @@
     <div class="meta">
         用户操作手册<br>
         全球招聘智能体平台 (Global Recruitment Operating System)<br>
-        版本 v1.7 &nbsp;|&nbsp; 2026年2月27日
+        版本 v2.0 &nbsp;|&nbsp; 2026年2月28日
     </div>
 </div>
 
@@ -208,6 +208,26 @@
         </div>
     </div>
 
+    <!-- 数据看板 -->
+    <div class="card">
+        <h2>📊 招聘数据看板</h2>
+        <div class="card-subtitle">全局数据可视化：漏斗转化率、渠道 ROI、Token 消耗追踪</div>
+
+        <h3><span class="step-num">1</span> KPI 总览</h3>
+        <p>页面顶部横幅实时展示四大核心指标：开放 HC 数、在途候选人、已入职人数、平均简历评分。</p>
+
+        <h3><span class="step-num">2</span> 可视化图表</h3>
+        <ul>
+            <li><strong>招聘漏斗转化</strong>：柱状图展示各阶段候选人数量及阶段间转化率。</li>
+            <li><strong>来源渠道分布</strong>：按来源渠道统计候选人数量及入职效率（ROI）。</li>
+            <li><strong>简历评分分布</strong>：四档分布统计（&lt;60 淘汰 / 60-79 边缘 / 80-89 通过 / 90+ 优秀）。</li>
+            <li><strong>HC 需求地区分布</strong>：按地区统计岗位需求量。</li>
+        </ul>
+
+        <h3><span class="step-num">3</span> LLM Token 消耗追踪 <span style="background:#DBEAFE;color:#1E40AF;font-size:0.75rem;padding:2px 8px;border-radius:10px;margin-left:6px;">V2.0 新增</span></h3>
+        <p>页面底部新增"近期 LLM 调用记录"面板，实时展示每次 AI 调用的模型名称、Prompt Tokens、Completion Tokens 和总消耗，帮助管理员监控 API 用量。</p>
+    </div>
+
     <!-- 系统功能速查 -->
     <div class="card">
         <h2>⚙️ 系统功能速查</h2>
@@ -221,13 +241,19 @@
 
         <h3>强制刷新缓存</h3>
         <p>若遇到界面卡顿或数据显示异常，可点击左侧导航栏底部的"🔄 强制清理云端缓存"按钮。</p>
+
+        <h3>Docker 部署 <span style="background:#DBEAFE;color:#1E40AF;font-size:0.75rem;padding:2px 8px;border-radius:10px;margin-left:6px;">V2.0 新增</span></h3>
+        <p>系统提供 <code>Dockerfile</code>，可通过 <code>docker build -t recruitment-copilot . && docker run -p 8501:8501 --env-file .env recruitment-copilot</code> 一条命令完成容器化部署。</p>
+
+        <h3>数据存储</h3>
+        <p>V2.0 起，系统数据从 JSON 文件迁移至 SQLite 数据库（<code>data/recruitment.db</code>，WAL 模式）。旧版 JSON 数据在首次启动时自动迁移，无需手动操作。</p>
     </div>
 
 </div>
 
 <div class="footer">
     <p>Alauda GROS Copilot — 灵雀云全球招聘智能体平台</p>
-    <p style="margin-top: 4px;">手册版本：v1.7 &nbsp;|&nbsp; &copy; 2026 <a href="https://www.alauda.cn" target="_blank">Alauda (灵雀云)</a></p>
+    <p style="margin-top: 4px;">手册版本：v2.0 &nbsp;|&nbsp; &copy; 2026 <a href="https://www.alauda.cn" target="_blank">Alauda (灵雀云)</a></p>
 </div>
 
 </body>
