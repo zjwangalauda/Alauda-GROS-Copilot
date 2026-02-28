@@ -1,21 +1,22 @@
 import logging
 import os
 import shutil
+
 import streamlit as st
+from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
 
-logger = logging.getLogger(__name__)
-
-from dotenv import load_dotenv
 load_dotenv(override=True)
+
+logger = logging.getLogger(__name__)
 
 FAISS_INDEX_PATH = "data/faiss_index"
 
 class RAGSystem:
-    def __init__(self, data_dir="data"):
+    def __init__(self, data_dir: str = "data"):
         self.data_dir = data_dir
 
         emb_api_key = os.environ.get("EMBEDDING_API_KEY", "")
@@ -45,7 +46,7 @@ class RAGSystem:
         """Returns 'vector' (real semantic search) or 'keyword' (degraded fallback)."""
         return self._embedding_mode
 
-    def load_and_index(self):
+    def load_and_index(self) -> bool:
         if self.vector_store is not None:
             return True
 
@@ -106,7 +107,7 @@ class RAGSystem:
             logger.error("Failed to build FAISS vector store", exc_info=True)
             return False
 
-    def retrieve(self, query, k=5):
+    def retrieve(self, query: str, k: int = 5) -> str:
         if not self.vector_store:
             return ""
 
@@ -145,11 +146,11 @@ class KeywordSearchEmbeddings:
     """Placeholder that lets FAISS initialise without an embedding API.
     Actual retrieval is intercepted in RAGSystem.retrieve() and handled
     via keyword matching instead."""
-    def embed_documents(self, texts):
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [[0.0] * 10 for _ in texts]
 
-    def embed_query(self, text):
+    def embed_query(self, text: str) -> list[float]:
         return [0.0] * 10
 
-    def __call__(self, text):
+    def __call__(self, text: str) -> list[float]:
         return self.embed_query(text)

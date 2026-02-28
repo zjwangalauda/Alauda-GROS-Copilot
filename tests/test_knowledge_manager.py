@@ -1,5 +1,4 @@
 import os
-import pytest
 from datetime import datetime, timedelta
 from knowledge_manager import KnowledgeManager
 
@@ -48,9 +47,10 @@ def test_compile_markdown(km, tmp_path):
     assert "Test knowledge fragment." in content
 
 
-def test_persistence(km):
+def test_persistence(km, tmp_path):
     km.add_fragment(region="US", category="Interview", content="Persistence check content")
 
-    km2 = KnowledgeManager(db_path=km.db_path)
+    # New instance shares the same SQLite singleton
+    km2 = KnowledgeManager(db_path=str(tmp_path / "nonexistent.json"))
     assert len(km2.get_all_fragments()) == 1
     assert km2.get_all_fragments()[0]["content"] == "Persistence check content"

@@ -72,11 +72,12 @@ def test_get_stats(cm):
     assert stats["Rejected"] == 0
 
 
-def test_persistence(cm):
+def test_persistence(cm, tmp_path):
     c = cm.add_candidate(name="Zara", role="Lead")
     cm.move_stage(c["id"], "Contacted")
 
-    cm2 = CandidateManager(db_path=cm.db_path)
+    # New instance shares the same SQLite singleton
+    cm2 = CandidateManager(db_path=str(tmp_path / "nonexistent.json"))
     assert len(cm2.get_all()) == 1
     assert cm2.get_all()[0]["stage"] == "Contacted"
 

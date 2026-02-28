@@ -1,10 +1,5 @@
-import sys
-import os
-
 import pytest
 from pydantic import ValidationError
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from recruitment_agent import TranslatedHCFields
 

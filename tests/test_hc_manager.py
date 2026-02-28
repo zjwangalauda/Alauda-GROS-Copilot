@@ -55,7 +55,7 @@ def test_update_not_found(hc_manager):
 
 def test_get_approved(hc_manager):
     id1 = hc_manager.submit_request(**SAMPLE_KWARGS)
-    id2 = hc_manager.submit_request(**SAMPLE_KWARGS)
+    hc_manager.submit_request(**SAMPLE_KWARGS)
     hc_manager.update_status(id1, "Approved")
 
     approved = hc_manager.get_approved_requests()
@@ -63,12 +63,12 @@ def test_get_approved(hc_manager):
     assert approved[0]["id"] == id1
 
 
-def test_persistence(hc_manager):
+def test_persistence(hc_manager, tmp_path):
     req_id = hc_manager.submit_request(**SAMPLE_KWARGS)
     hc_manager.update_status(req_id, "Approved")
 
-    # Create a new instance pointing to the same file
-    mgr2 = HCManager(db_path=hc_manager.db_path)
+    # Create a new instance sharing the same SQLite singleton
+    mgr2 = HCManager(db_path=str(tmp_path / "nonexistent.json"))
     assert len(mgr2.get_all_requests()) == 1
     assert mgr2.get_all_requests()[0]["id"] == req_id
     assert mgr2.get_all_requests()[0]["status"] == "Approved"

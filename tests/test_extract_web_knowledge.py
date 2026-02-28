@@ -1,11 +1,7 @@
-import sys
 import os
 from unittest.mock import MagicMock, patch
 
-import pytest
 from openai import RateLimitError
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from recruitment_agent import RecruitmentAgent
 

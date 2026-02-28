@@ -1,11 +1,12 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pandas as pd
 import streamlit as st
 
 from candidate_manager import CandidateManager
 from hc_manager import HCManager
+from recruitment_agent import get_llm_usage_log
 
 logger = logging.getLogger(__name__)
 
@@ -85,10 +86,14 @@ with _col_score:
         # 分段统计
         _buckets = {"<60 (淘汰)": 0, "60–79 (边缘)": 0, "80–89 (通过)": 0, "90+ (优秀)": 0}
         for _sc in _scores:
-            if _sc < 60:   _buckets["<60 (淘汰)"] += 1
-            elif _sc < 80: _buckets["60–79 (边缘)"] += 1
-            elif _sc < 90: _buckets["80–89 (通过)"] += 1
-            else:           _buckets["90+ (优秀)"] += 1
+            if _sc < 60:
+                _buckets["<60 (淘汰)"] += 1
+            elif _sc < 80:
+                _buckets["60–79 (边缘)"] += 1
+            elif _sc < 90:
+                _buckets["80–89 (通过)"] += 1
+            else:
+                _buckets["90+ (优秀)"] += 1
         _sc_df = pd.DataFrame({"档位": list(_buckets.keys()), "人数": list(_buckets.values())}).set_index("档位")
         st.bar_chart(_sc_df, color="#8B5CF6")
         st.caption(f"共 {len(_scores)} 份已评分简历，平均分 {_avg_score}")
@@ -140,3 +145,17 @@ if _hc_list:
     st.dataframe(_hc_df, use_container_width=True, hide_index=True)
 else:
     st.info("暂无 HC 记录。")
+
+# ── 第五行：LLM Token 使用追踪 ─────────────────────────────
+st.markdown("---")
+st.markdown("#### 🤖 近期 LLM 调用记录")
+_usage_log = get_llm_usage_log()
+if _usage_log:
+    _usage_df = pd.DataFrame(_usage_log)
+    _usage_df = _usage_df[["timestamp", "model", "prompt_tokens", "completion_tokens", "total_tokens"]]
+    _usage_df.columns = ["时间", "模型", "Prompt Tokens", "Completion Tokens", "总 Tokens"]
+    st.dataframe(_usage_df.iloc[::-1], use_container_width=True, hide_index=True)
+    _total = sum(r["total_tokens"] for r in _usage_log)
+    st.caption(f"本次会话累计消耗 {_total:,} tokens（最近 {len(_usage_log)} 次调用）")
+else:
+    st.info("本次会话尚未发起 LLM 调用。使用其他模块后，此处将显示 Token 消耗记录。")

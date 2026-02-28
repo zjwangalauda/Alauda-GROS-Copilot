@@ -18,7 +18,7 @@ try:
 except Exception:
     logger.debug("No secrets.toml found — using .env for local development")
 
-from app_shared import check_password, get_agent, inject_css
+from app_shared import check_password, get_agent, inject_css  # noqa: E402
 
 # 1. 页面级基础设置
 st.set_page_config(

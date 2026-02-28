@@ -1,11 +1,8 @@
-import sys
 import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-from openai import RateLimitError, APITimeoutError
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from openai import RateLimitError
 
 from recruitment_agent import RecruitmentAgent
 
