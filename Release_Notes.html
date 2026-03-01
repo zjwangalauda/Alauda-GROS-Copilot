@@ -40,9 +40,36 @@
 
 <div class="container">
 
+    <!-- V2.0.2 -->
+    <div class="card">
+        <span class="version-badge">V2.0.2 — Latest</span>
+        <h2>安全加固与质量提升</h2>
+        <div class="date">2026-03-02</div>
+
+        <h3>🛡️ 安全加固 (Security Hardening)</h3>
+        <ul>
+            <li><strong>密码比较安全升级 (P2)</strong>：登录密码验证从 == 改为 hmac.compare_digest()，消除时序攻击风险。</li>
+        </ul>
+
+        <h3>📦 依赖补全 (Dependencies)</h3>
+        <ul>
+            <li><strong>缺失依赖声明修复 (P2)</strong>：requirements.txt 补全 pandas==2.3.3 和 langchain-text-splitters==1.1.1。</li>
+        </ul>
+
+        <h3>🧪 测试覆盖率跃升 (Testing)</h3>
+        <ul>
+            <li><strong>测试用例从 39 → 78</strong>：新增 39 个单元测试覆盖 document_parser.py、recruitment_agent.py、app_shared.py。</li>
+        </ul>
+
+        <h3>🏗️ 工程化改进 (Infrastructure)</h3>
+        <ul>
+            <li>CI/CD 增强：pip 缓存 + pytest-cov 覆盖率报告（最低阈值 30%）。</li>
+        </ul>
+    </div>
+
     <!-- V2.0.1 -->
     <div class="card">
-        <span class="version-badge">V2.0.1 — Latest</span>
+        <span class="version-badge old">V2.0.1</span>
         <h2>热修复：LLM 引擎凭证缓存失效</h2>
         <div class="date">2026-03-02</div>
 
