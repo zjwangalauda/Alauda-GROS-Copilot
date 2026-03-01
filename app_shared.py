@@ -1,5 +1,6 @@
 """Shared singletons, helpers, and CSS for all pages."""
 
+import hmac
 import logging
 import os
 import json
@@ -54,7 +55,7 @@ def check_password() -> bool:
         )
         _input = st.text_input("访问密码", type="password", key="_login_input", label_visibility="collapsed", placeholder="请输入访问密码...")
         if st.button("登录", type="primary", use_container_width=True):
-            if _input == _pwd:
+            if hmac.compare_digest(_input, _pwd):
                 st.session_state["_authenticated"] = True
                 st.rerun()
             else:
