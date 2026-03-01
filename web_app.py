@@ -18,7 +18,7 @@ try:
 except Exception:
     logger.debug("No secrets.toml found — using .env for local development")
 
-from app_shared import check_password, get_agent, inject_css  # noqa: E402
+from app_shared import check_password, get_agent, inject_css, _llm_cache_key  # noqa: E402
 
 # 1. 页面级基础设置
 st.set_page_config(
@@ -36,7 +36,7 @@ if not check_password():
     st.stop()
 
 # 4. 预热 Agent 缓存
-get_agent()
+get_agent(_key=_llm_cache_key())
 
 # 5. 侧边栏 Logo
 with st.sidebar:

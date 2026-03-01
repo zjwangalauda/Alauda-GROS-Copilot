@@ -6,7 +6,7 @@ st.markdown('<div class="main-title">🌍 灵雀云全球精英招聘指挥中�
 # --- Temporary diagnostic (remove after debugging) ---
 with st.expander("🔧 LLM 连接诊断 (点击展开)"):
     if st.button("运行诊断"):
-        from app_shared import get_agent
+        from app_shared import get_agent, _llm_cache_key
 
         key = os.environ.get("OPENAI_API_KEY", "")
         base = os.environ.get("OPENAI_API_BASE", "")
@@ -20,7 +20,7 @@ with st.expander("🔧 LLM 连接诊断 (点击展开)"):
         st.write(f"**STRONG_MODEL**: `{strong or '(empty)'}`")
 
         st.markdown("#### 2. 缓存 Agent 实际使用的凭据")
-        agent = get_agent()
+        agent = get_agent(_key=_llm_cache_key())
         agent_key = agent.api_key or ""
         st.write(f"**agent.api_key**: `{agent_key[:8]}...{agent_key[-4:]}`" if len(agent_key) > 12 else f"**agent.api_key**: `{agent_key or '(empty)'}`")
         st.write(f"**agent.base_url**: `{agent.base_url or '(empty)'}`")

@@ -4,12 +4,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import streamlit as st
 
-from app_shared import get_agent, load_latest_jd
+from app_shared import get_agent, load_latest_jd, _llm_cache_key
 
 st.markdown('<div class="main-title">📄 猎头简历智能雷达 (Resume Matcher)</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">解决 HR 看不懂海外技术简历、容易被候选人过度包装忽悠的问题。AI 基于严苛的【算分卡法则】进行防漂移量化打分。</div>', unsafe_allow_html=True)
 
-agent = get_agent()
+agent = get_agent(_key=_llm_cache_key())
 
 # 左右两栏布局：左边 JD，右边简历上传
 col_jd, col_resume = st.columns([1, 1])

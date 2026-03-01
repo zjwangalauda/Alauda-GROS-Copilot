@@ -3,12 +3,12 @@ import os
 
 import streamlit as st
 
-from app_shared import get_agent, load_latest_jd
+from app_shared import get_agent, load_latest_jd, _llm_cache_key
 
 st.markdown('<div class="main-title">✉️ 高转化率自动化触达 (Cold Outreach)</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">抛弃"我们在招人，你有兴趣吗"的废话，一键生成直击痛点、高度个性化的猎头级触达邮件与 LinkedIn InMail。</div>', unsafe_allow_html=True)
 
-agent = get_agent()
+agent = get_agent(_key=_llm_cache_key())
 
 default_jd_text, jd_msg = load_latest_jd()
 if default_jd_text and jd_msg:

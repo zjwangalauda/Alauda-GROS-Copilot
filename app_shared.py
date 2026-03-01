@@ -65,14 +65,32 @@ def check_password() -> bool:
 # ---------------------------------------------------------------------------
 # Cached singletons
 # ---------------------------------------------------------------------------
+def _llm_cache_key():
+    """Return a tuple of LLM credentials so the cache auto-invalidates when secrets change."""
+    return (
+        os.environ.get("OPENAI_API_KEY", ""),
+        os.environ.get("OPENAI_API_BASE", ""),
+        os.environ.get("LLM_MODEL", ""),
+        os.environ.get("STRONG_MODEL", ""),
+    )
+
+
+def _emb_cache_key():
+    """Return a tuple of embedding credentials so the cache auto-invalidates when secrets change."""
+    return (
+        os.environ.get("EMBEDDING_API_KEY", ""),
+        os.environ.get("EMBEDDING_API_BASE", ""),
+    )
+
+
 @st.cache_resource
-def get_agent():
+def get_agent(_key=None):
     from recruitment_agent import RecruitmentAgent
     return RecruitmentAgent()
 
 
 @st.cache_resource
-def get_rag_system():
+def get_rag_system(_key=None):
     from document_parser import RAGSystem
     return RAGSystem()
 

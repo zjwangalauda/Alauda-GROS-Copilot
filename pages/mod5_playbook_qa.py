@@ -1,12 +1,12 @@
 import streamlit as st
 
-from app_shared import get_agent, get_rag_system
+from app_shared import get_agent, get_rag_system, _llm_cache_key, _emb_cache_key
 
 st.markdown('<div class="main-title">📚 灵雀云出海智库 AI 助手</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">基于 RAG 检索增强技术。您可以随时询问关于本地化合规、出海战略指导手册、雇主品牌沟通话术等内容。</div>', unsafe_allow_html=True)
 
-agent = get_agent()
-rag = get_rag_system()
+agent = get_agent(_key=_llm_cache_key())
+rag = get_rag_system(_key=_emb_cache_key())
 
 with st.spinner("⏳ 正在挂载本地知识库 (PDF & 动态沉淀库)..."):
     is_loaded = rag.load_and_index()

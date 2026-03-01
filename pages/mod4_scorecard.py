@@ -3,12 +3,12 @@ import os
 
 import streamlit as st
 
-from app_shared import get_agent, load_latest_jd
+from app_shared import get_agent, load_latest_jd, _llm_cache_key
 
 st.markdown('<div class="main-title">📝 结构化面试评估系统</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">消除面试过程中的主观偏见。基于 JD 自动提取关键维度，生成【行为锚定评分卡 (Scorecard)】与【STAR 题库】。</div>', unsafe_allow_html=True)
 
-agent = get_agent()
+agent = get_agent(_key=_llm_cache_key())
 
 default_jd_text, jd_msg = load_latest_jd()
 if default_jd_text and jd_msg:

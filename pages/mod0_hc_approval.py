@@ -3,14 +3,14 @@ import re
 
 import streamlit as st
 
-from app_shared import get_agent
+from app_shared import get_agent, _llm_cache_key
 from hc_manager import HCManager
 
 st.markdown('<div class="main-title">📋 业务线 HC 需求提报与审批</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">打造业务部门与 HR 的协同桥梁。业务方在此提报人才需求，HR 审批通过后自动流转至"JD 生成与寻源"模块。</div>', unsafe_allow_html=True)
 
 hc_mgr = HCManager()
-agent = get_agent()
+agent = get_agent(_key=_llm_cache_key())
 
 tab1, tab2 = st.tabs(["📤 我是业务：提报新 HC", "✅ 我是 HR：审批 HC 需求"])
 

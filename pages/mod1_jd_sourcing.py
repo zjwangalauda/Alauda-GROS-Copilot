@@ -7,13 +7,13 @@ from datetime import datetime
 
 import streamlit as st
 
-from app_shared import get_agent
+from app_shared import get_agent, _llm_cache_key
 from hc_manager import HCManager
 
 st.markdown('<div class="main-title">🎯 JD 逆向工程与自动化寻源</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">承接业务线的 HC 需求，AI 将自动输出"高转化率的职位描述 (JD)"与"Google X-Ray 自动化寻源代码"。</div>', unsafe_allow_html=True)
 
-agent = get_agent()
+agent = get_agent(_key=_llm_cache_key())
 hc_mgr = HCManager()
 approved_hcs = hc_mgr.get_approved_requests()
 

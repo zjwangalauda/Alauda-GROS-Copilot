@@ -5,13 +5,13 @@ import requests
 import streamlit as st
 from bs4 import BeautifulSoup
 
-from app_shared import get_agent
+from app_shared import get_agent, _llm_cache_key
 from knowledge_manager import KnowledgeManager
 
 st.markdown('<div class="main-title">🏗️ 知识库全自动收割机 (Web Auto-Harvester)</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">告别人工录入！只需输入权威政策网页或竞品招聘网址，AI 爬虫将自动提取、清洗并将其沉淀为结构化的本地知识库。</div>', unsafe_allow_html=True)
 
-agent = get_agent()
+agent = get_agent(_key=_llm_cache_key())
 km = KnowledgeManager()
 
 col1, col2 = st.columns([1, 1])
