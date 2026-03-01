@@ -40,9 +40,21 @@
 
 <div class="container">
 
+    <!-- V2.0.1 -->
+    <div class="card">
+        <span class="version-badge">V2.0.1 — Latest</span>
+        <h2>热修复：LLM 引擎凭证缓存失效</h2>
+        <div class="date">2026-03-02</div>
+
+        <h3>🔧 修复 (Bug Fixes)</h3>
+        <ul>
+            <li><strong>LLM 凭证缓存失效</strong>：修复当用户在 Streamlit Secrets 中更新 API Key 后，系统仍使用旧凭证进行 LLM 调用的问题。现在每次检测到凭证变更时，自动重新初始化 Agent 实例，确保配置变更即时生效。</li>
+        </ul>
+    </div>
+
     <!-- V2.0 -->
     <div class="card">
-        <span class="version-badge">V2.0 — Latest</span>
+        <span class="version-badge old">V2.0</span>
         <h2>生产级加固：SQLite 迁移、安全防护、CI/CD 与容器化部署</h2>
         <div class="date">2026-02-28</div>
 
