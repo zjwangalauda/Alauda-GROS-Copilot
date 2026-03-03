@@ -1,5 +1,4 @@
 import streamlit as st
-from app_shared import bi
 
 st.markdown('<div class="main-title">🌍 Alauda Global Elite Recruitment Command Center / 灵雀云全球精英招聘指挥中心</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">A Replicable Global Elite Talent Acquisition Operating System / 可复制的全球精英人才获取操作系统 (GROS)</div>', unsafe_allow_html=True)
