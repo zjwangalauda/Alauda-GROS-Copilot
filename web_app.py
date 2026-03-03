@@ -18,11 +18,11 @@ try:
 except Exception:
     logger.debug("No secrets.toml found — using .env for local development")
 
-from app_shared import check_password, get_agent, inject_css, _llm_cache_key  # noqa: E402
+from app_shared import bi, check_password, get_agent, inject_css, _llm_cache_key  # noqa: E402
 
 # 1. 页面级基础设置
 st.set_page_config(
-    page_title="Alauda GROS Copilot | 全球招聘智能体",
+    page_title="Alauda GROS Copilot | Global Recruitment AI / 全球招聘智能体",
     page_icon="assets/favicon.ico",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -49,19 +49,19 @@ with st.sidebar:
 
 # 6. 页面导航
 pages = {
-    "核心操作模块": [
-        st.Page("pages/home.py",                    title="首页：全流程作战大盘",         icon="🏠", default=True),
-        st.Page("pages/mod0_hc_approval.py",        title="模块零：HC 业务需求审批",      icon="📋"),
-        st.Page("pages/mod1_jd_sourcing.py",        title="模块一：JD 逆向与自动寻源",    icon="🎯"),
-        st.Page("pages/mod2_outreach.py",           title="模块二：自动化触达",           icon="✉️"),
-        st.Page("pages/mod3_resume_matcher.py",     title="模块三：简历智能初筛",         icon="📄"),
-        st.Page("pages/mod4_scorecard.py",          title="模块四：结构化面试打分卡",      icon="📝"),
-        st.Page("pages/mod7_candidate_pipeline.py", title="模块七：候选人 Pipeline 看板", icon="👥"),
+    "Core Modules / 核心操作模块": [
+        st.Page("pages/home.py",                    title="Home / 首页",                          icon="🏠", default=True),
+        st.Page("pages/mod0_hc_approval.py",        title="M0: HC Approval / HC 审批",            icon="📋"),
+        st.Page("pages/mod1_jd_sourcing.py",        title="M1: JD & Sourcing / JD 与寻源",        icon="🎯"),
+        st.Page("pages/mod2_outreach.py",           title="M2: Outreach / 自动化触达",            icon="✉️"),
+        st.Page("pages/mod3_resume_matcher.py",     title="M3: Resume Match / 简历初筛",          icon="📄"),
+        st.Page("pages/mod4_scorecard.py",          title="M4: Scorecard / 面试打分卡",           icon="📝"),
+        st.Page("pages/mod7_candidate_pipeline.py", title="M7: Pipeline / 候选人看板",            icon="👥"),
     ],
-    "数据与智库": [
-        st.Page("pages/dashboard.py",               title="招聘数据看板",                 icon="📊"),
-        st.Page("pages/mod5_playbook_qa.py",        title="模块五：Playbook 智库问答",    icon="📚"),
-        st.Page("pages/mod6_knowledge_harvester.py", title="模块六：知识库自生长",         icon="🏗️"),
+    "Data & Intelligence / 数据与智库": [
+        st.Page("pages/dashboard.py",               title="Dashboard / 数据看板",                 icon="📊"),
+        st.Page("pages/mod5_playbook_qa.py",        title="M5: Playbook Q&A / 智库问答",          icon="📚"),
+        st.Page("pages/mod6_knowledge_harvester.py", title="M6: Knowledge Harvester / 知识收割",   icon="🏗️"),
     ],
 }
 
@@ -70,14 +70,15 @@ pg = st.navigation(pages, position="sidebar")
 # 7. 侧边栏底部
 with st.sidebar:
     st.markdown("---")
-    if st.button("🔄 强制清理云端缓存 (如遇异常请点击)", use_container_width=True):
+    if st.button(bi("🔄 Clear cache (click if errors)", "🔄 强制清理缓存 (如遇异常请点击)"), use_container_width=True):
         st.cache_resource.clear()
         st.cache_data.clear()
-        st.success("✅ 缓存已清空")
+        st.success(bi("✅ Cache cleared", "✅ 缓存已清空"))
         st.rerun()
     st.markdown("""
     <div style="font-size: 0.85rem; color: #6B7280; line-height: 1.5; background-color: #F8FAFC; padding: 12px; border-radius: 6px; border: 1px solid #E2E8F0;">
-    💡 <b>系统说明</b><br>
+    💡 <b>About / 系统说明</b><br>
+    Built on the Alauda Global Recruitment Operating System (GROS). AI-powered end-to-end recruitment pipeline for precision capture of elite overseas talent.<br>
     本系统基于《Alauda 全球技术精英招聘操作系统 (GROS)》构建，由 AI 赋能招聘全流程，旨在实现海外精英人才的精准流水线式捕获。
     </div>
     """, unsafe_allow_html=True)

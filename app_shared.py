@@ -11,6 +11,14 @@ from db import get_db
 
 logger = logging.getLogger(__name__)
 
+
+# ---------------------------------------------------------------------------
+# Bilingual helper
+# ---------------------------------------------------------------------------
+def bi(en: str, zh: str) -> str:
+    """Return a bilingual string in 'English / 中文' format."""
+    return f"{en} / {zh}"
+
 # Ensure SQLite tables exist on import
 get_db()
 
@@ -48,18 +56,18 @@ def check_password() -> bool:
             "border-radius:12px;padding:40px;box-shadow:0 4px 16px rgba(0,0,0,0.08);'>"
             "<div style='text-align:center;margin-bottom:24px;'>"
             "<img src='https://www.alauda.cn/Public/Home/images/new_header/logo_new_230524.png' width='160'>"
-            "<h2 style='color:#004D99;margin-top:16px;font-size:1.2rem;'>GROS Copilot — 访问验证</h2>"
-            "<p style='color:#64748B;font-size:0.9rem;'>请输入访问密码以继续</p>"
+            "<h2 style='color:#004D99;margin-top:16px;font-size:1.2rem;'>GROS Copilot — Access Verification / 访问验证</h2>"
+            "<p style='color:#64748B;font-size:0.9rem;'>Enter password to continue / 请输入访问密码以继续</p>"
             "</div></div>",
             unsafe_allow_html=True,
         )
-        _input = st.text_input("访问密码", type="password", key="_login_input", label_visibility="collapsed", placeholder="请输入访问密码...")
-        if st.button("登录", type="primary", use_container_width=True):
+        _input = st.text_input(bi("Password", "访问密码"), type="password", key="_login_input", label_visibility="collapsed", placeholder="Enter access password / 请输入访问密码...")
+        if st.button(bi("Login", "登录"), type="primary", use_container_width=True):
             if hmac.compare_digest(_input, _pwd):
                 st.session_state["_authenticated"] = True
                 st.rerun()
             else:
-                st.error("密码错误，请重试。")
+                st.error(bi("Incorrect password, please retry.", "密码错误，请重试。"))
     return False
 
 
@@ -105,11 +113,14 @@ def load_latest_jd():
     Returns ("", warning_message) when nothing is available.
     """
     if "generated_jd" in st.session_state:
-        return st.session_state["generated_jd"], "💡 Auto-loaded from Module 1."
+        return st.session_state["generated_jd"], bi("💡 Auto-loaded from Module 1.", "💡 已从模块一自动加载。")
     if os.path.exists("data/generated/latest_jd.json"):
         with open("data/generated/latest_jd.json", encoding="utf-8") as f:
             rec = json.load(f)
         jd_text = rec["jd_content"]
         st.session_state["generated_jd"] = jd_text
-        return jd_text, f"💡 Auto-restored last generated JD ({rec['role_title']} · {rec['generated_at'][:10]})"
+        return jd_text, bi(
+            f"💡 Auto-restored last generated JD ({rec['role_title']} · {rec['generated_at'][:10]})",
+            f"💡 已恢复上次生成的 JD ({rec['role_title']} · {rec['generated_at'][:10]})",
+        )
     return "", ""
