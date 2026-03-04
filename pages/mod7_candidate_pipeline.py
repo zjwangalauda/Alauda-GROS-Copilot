@@ -55,7 +55,7 @@ with st.expander(bi("➕ Add Candidate", "➕ 添加新候选人"), expanded=(_t
 
 # --- Kanban 看板 (只显示活跃阶段) ---
 st.markdown("### 🗂️ Recruitment Funnel Board / 招聘漏斗看板")
-_active_only = st.checkbox(bi("Active only (hide Hired / Rejected)", "仅显示活跃候选人（隐藏 Hired / Rejected）"), value=True)
+_active_only = st.checkbox(bi("Active only (hide Hired / Rejected / Withdrawn)", "仅显示活跃候选人（隐藏 Hired / Rejected / Withdrawn）"), value=True)
 _display_stages = _active_stages if _active_only else PIPELINE_STAGES
 
 _kanban_cols = st.columns(len(_display_stages))
@@ -89,10 +89,10 @@ for _col_idx, _stage in enumerate(_display_stages):
                 unsafe_allow_html=True,
             )
             # Action buttons per card
-            _next_stages = [s for s in PIPELINE_STAGES if s != _stage and s != "Rejected"]
+            _next_stages = [s for s in PIPELINE_STAGES if s != _stage and s not in ("Rejected", "Withdrawn")]
             _move_to = st.selectbox("→", _next_stages, key=f"move_{_cand['id']}", label_visibility="collapsed")
             _move_note = st.text_input("备注", key=f"note_{_cand['id']}", placeholder="backward move requires note", label_visibility="collapsed")
-            _act_cols = st.columns([1, 1])
+            _act_cols = st.columns([1, 1, 1])
             with _act_cols[0]:
                 if st.button(bi("Move", "移动"), key=f"mv_{_cand['id']}", use_container_width=True):
                     try:
@@ -101,9 +101,14 @@ for _col_idx, _stage in enumerate(_display_stages):
                     except ValueError as e:
                         st.error(str(e))
             with _act_cols[1]:
-                if _stage != "Rejected":
-                    if st.button("Reject", key=f"rej_{_cand['id']}", use_container_width=True, type="secondary"):
-                        cm.move_stage(_cand["id"], "Rejected", note=_move_note or "Rejected from kanban")
+                if _stage not in ("Rejected", "Withdrawn"):
+                    if st.button(bi("Reject", "淘汰"), key=f"rej_{_cand['id']}", use_container_width=True, type="secondary"):
+                        cm.move_stage(_cand["id"], "Rejected", note=_move_note or "Rejected by company")
+                        st.rerun()
+            with _act_cols[2]:
+                if _stage not in ("Rejected", "Withdrawn"):
+                    if st.button(bi("Withdrawn", "候选人退出"), key=f"wd_{_cand['id']}", use_container_width=True, type="secondary"):
+                        cm.move_stage(_cand["id"], "Withdrawn", note=_move_note or "Candidate withdrew")
                         st.rerun()
 
 # --- 候选人详情 & 备注 ---

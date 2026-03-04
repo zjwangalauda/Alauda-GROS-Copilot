@@ -13,7 +13,11 @@ PIPELINE_STAGES = [
     "Offer",
     "Hired",
     "Rejected",
+    "Withdrawn",
 ]
+
+# Terminal stages that represent exit from the active pipeline
+TERMINAL_STAGES = {"Rejected", "Withdrawn"}
 
 STAGE_COLORS = {
     "Sourced":      "#64748B",
@@ -23,6 +27,7 @@ STAGE_COLORS = {
     "Offer":        "#10B981",
     "Hired":        "#059669",
     "Rejected":     "#DC2626",
+    "Withdrawn":    "#F97316",
 }
 
 
@@ -96,9 +101,9 @@ class CandidateManager:
         old_stage = row["stage"]
         old_idx = PIPELINE_STAGES.index(old_stage)
         new_idx = PIPELINE_STAGES.index(new_stage)
-        is_backward = new_idx < old_idx and new_stage != "Rejected"
-        is_leaving_rejected = old_stage == "Rejected" and new_stage != "Rejected"
-        if (is_backward or is_leaving_rejected) and not note.strip():
+        is_backward = new_idx < old_idx and new_stage not in TERMINAL_STAGES
+        is_leaving_terminal = old_stage in TERMINAL_STAGES and new_stage not in TERMINAL_STAGES
+        if (is_backward or is_leaving_terminal) and not note.strip():
             raise ValueError(
                 f"A note is required when moving backward (from '{old_stage}' to '{new_stage}')."
             )

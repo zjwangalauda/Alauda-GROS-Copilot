@@ -126,3 +126,31 @@ def test_move_out_of_rejected_with_note_succeeds(cm):
     assert result is True
     updated = [x for x in cm.get_all() if x["id"] == c["id"]][0]
     assert updated["stage"] == "Phone Screen"
+
+
+def test_move_to_withdrawn_always_allowed(cm):
+    """Moving to Withdrawn from any stage is always allowed, even without a note."""
+    c = cm.add_candidate(name="Vijay", role="K8s Engineer")
+    cm.move_stage(c["id"], "Offer")
+    result = cm.move_stage(c["id"], "Withdrawn")
+    assert result is True
+    updated = [x for x in cm.get_all() if x["id"] == c["id"]][0]
+    assert updated["stage"] == "Withdrawn"
+
+
+def test_move_out_of_withdrawn_requires_note(cm):
+    """Moving out of Withdrawn without a note raises ValueError."""
+    c = cm.add_candidate(name="Priya", role="Dev")
+    cm.move_stage(c["id"], "Withdrawn")
+    with pytest.raises(ValueError, match="note is required"):
+        cm.move_stage(c["id"], "Contacted")
+
+
+def test_move_out_of_withdrawn_with_note_succeeds(cm):
+    """Moving out of Withdrawn with a note is allowed."""
+    c = cm.add_candidate(name="Ravi", role="Dev")
+    cm.move_stage(c["id"], "Withdrawn")
+    result = cm.move_stage(c["id"], "Contacted", note="Candidate re-engaged after 3 months")
+    assert result is True
+    updated = [x for x in cm.get_all() if x["id"] == c["id"]][0]
+    assert updated["stage"] == "Contacted"
