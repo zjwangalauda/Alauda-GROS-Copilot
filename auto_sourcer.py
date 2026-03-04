@@ -288,6 +288,20 @@ class AutoSourcer:
         rows = conn.execute(sql, params).fetchall()
         return [dict(r) for r in rows]
 
+    def get_evaluations_for_talent(self, talent_id: str) -> list[dict]:
+        """Get all shortlist evaluations for a specific talent, with HC info."""
+        conn = self._conn()
+        rows = conn.execute(
+            """SELECT s.score, s.verdict, s.evaluation_md, s.disposition, s.created_at,
+                      h.role_title, h.location AS hc_location, h.id AS hc_id
+               FROM shortlist s
+               JOIN hc_requests h ON s.hc_id = h.id
+               WHERE s.talent_id = ?
+               ORDER BY s.score DESC""",
+            (talent_id,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
     def get_frozen_list(self) -> list[dict]:
         """Get all 'Not Interested' entries still within freeze window."""
         conn = self._conn()

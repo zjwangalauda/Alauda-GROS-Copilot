@@ -104,55 +104,102 @@ with tab_pool:
     else:
         for t in all_talents:
             # Evaluation status badge
-            _eval_badge = ""
+            _eval_badge_text = ""
             if t.get("best_score") is not None:
                 _bs = t["best_score"]
                 if _bs >= 80:
-                    _eval_badge = f'<span style="background:#DCFCE7;color:#166534;padding:2px 8px;border-radius:10px;font-size:0.72rem;margin-left:4px;">Best: {_bs:.0f}/100 Strong Match</span>'
+                    _eval_badge_text = f"Best: {_bs:.0f}/100 Strong Match"
                 elif _bs >= 60:
-                    _eval_badge = f'<span style="background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:10px;font-size:0.72rem;margin-left:4px;">Best: {_bs:.0f}/100 Borderline</span>'
+                    _eval_badge_text = f"Best: {_bs:.0f}/100 Borderline"
                 else:
-                    _eval_badge = f'<span style="background:#FEE2E2;color:#991B1B;padding:2px 8px;border-radius:10px;font-size:0.72rem;margin-left:4px;">Best: {_bs:.0f}/100 Disqualified</span>'
-            elif t.get("eval_count") is None or t["eval_count"] == 0:
-                _eval_badge = '<span style="background:#F1F5F9;color:#64748B;padding:2px 8px;border-radius:10px;font-size:0.72rem;margin-left:4px;">Not Screened</span>'
+                    _eval_badge_text = f"Best: {_bs:.0f}/100 Disqualified"
+            else:
+                _eval_badge_text = "Not Screened"
 
-            _tags_html = ""
+            _tags_str = ""
             if t.get("tags"):
-                _tags_html = " ".join(
-                    f'<span style="background:#EEF2FF;color:#4338CA;padding:1px 6px;border-radius:10px;font-size:0.7rem;">{html.escape(tag.strip())}</span>'
-                    for tag in t["tags"].split(",")[:6]
-                )
-            st.markdown(
-                f"<div style='background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:12px 16px;margin-bottom:6px;'>"
-                f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
-                f"<div><span style='font-weight:600;font-size:0.95rem;'>{html.escape(t.get('candidate_name') or t['file_name'])}</span> "
-                f"{_eval_badge}</div>"
-                f"<div style='color:#94A3B8;font-size:0.75rem;'>{html.escape(t['uploaded_at'])}</div></div>"
-                f"<div style='color:#64748B;font-size:0.8rem;margin-top:4px;'>📄 {html.escape(t['file_name'])}"
-                f"{' · ' + html.escape(t['email']) if t.get('email') else ''}"
-                f"{' · LinkedIn' if t.get('linkedin_url') else ''}</div>"
-                f"<div style='margin-top:6px;'>{_tags_html}</div></div>",
-                unsafe_allow_html=True,
-            )
-            _tc1, _tc2 = st.columns([4, 1])
-            with _tc2:
-                if st.button(bi("Delete", "删除"), key=f"del_{t['id']}", use_container_width=True, type="secondary"):
-                    st.session_state[f"confirm_del_{t['id']}"] = True
-            if st.session_state.get(f"confirm_del_{t['id']}"):
-                st.warning(bi(
-                    f"Delete {t.get('candidate_name') or t['file_name']}? This also removes related shortlist entries.",
-                    f"确认删除 {t.get('candidate_name') or t['file_name']}？相关的推荐清单记录也会被移除。",
-                ))
-                _dc1, _dc2 = st.columns(2)
-                with _dc1:
-                    if st.button(bi("Confirm Delete", "确认删除"), key=f"cfm_del_{t['id']}", type="primary", use_container_width=True):
-                        tpm.delete_talent(t["id"])
-                        st.session_state.pop(f"confirm_del_{t['id']}", None)
-                        st.rerun()
-                with _dc2:
-                    if st.button(bi("Cancel", "取消"), key=f"cancel_del_{t['id']}", use_container_width=True):
-                        st.session_state.pop(f"confirm_del_{t['id']}", None)
-                        st.rerun()
+                _tags_str = " · ".join(tag.strip() for tag in t["tags"].split(",")[:6])
+
+            _display_name = t.get("candidate_name") or t["file_name"]
+            _expander_label = f"{_display_name}  |  {_eval_badge_text}  |  {t['uploaded_at']}"
+
+            with st.expander(_expander_label, expanded=False):
+                # --- Contact & file info ---
+                _info_col, _action_col = st.columns([4, 1])
+                with _info_col:
+                    st.markdown(f"**{bi('File', '文件')}:** {html.escape(t['file_name'])}")
+                    if t.get("email"):
+                        st.markdown(f"**Email:** {html.escape(t['email'])}")
+                    if t.get("phone"):
+                        st.markdown(f"**{bi('Phone', '电话')}:** {html.escape(t['phone'])}")
+                    if t.get("linkedin_url"):
+                        st.markdown(f"**LinkedIn:** [{html.escape(t['linkedin_url'])}]({t['linkedin_url']})")
+                    if _tags_str:
+                        st.markdown(f"**{bi('Skills', '技能')}:** {html.escape(_tags_str)}")
+                    st.markdown(f"**{bi('Uploaded', '上传日期')}:** {html.escape(t['uploaded_at'])}")
+                with _action_col:
+                    if st.button(bi("Delete", "删除"), key=f"del_{t['id']}", use_container_width=True, type="secondary"):
+                        st.session_state[f"confirm_del_{t['id']}"] = True
+                if st.session_state.get(f"confirm_del_{t['id']}"):
+                    st.warning(bi(
+                        f"Delete {_display_name}? This also removes related shortlist entries.",
+                        f"确认删除 {_display_name}？相关的推荐清单记录也会被移除。",
+                    ))
+                    _dc1, _dc2 = st.columns(2)
+                    with _dc1:
+                        if st.button(bi("Confirm Delete", "确认删除"), key=f"cfm_del_{t['id']}", type="primary", use_container_width=True):
+                            tpm.delete_talent(t["id"])
+                            st.session_state.pop(f"confirm_del_{t['id']}", None)
+                            st.rerun()
+                    with _dc2:
+                        if st.button(bi("Cancel", "取消"), key=f"cancel_del_{t['id']}", use_container_width=True):
+                            st.session_state.pop(f"confirm_del_{t['id']}", None)
+                            st.rerun()
+
+                # --- Resume text ---
+                st.markdown(f"#### {bi('Resume Content', '简历内容')}")
+                _parsed = t.get("parsed_text") or ""
+                if _parsed:
+                    st.text_area(
+                        bi("Parsed text", "解析文本"),
+                        value=_parsed,
+                        height=200,
+                        disabled=True,
+                        key=f"resume_{t['id']}",
+                        label_visibility="collapsed",
+                    )
+                else:
+                    st.info(bi("No parsed text available.", "暂无解析文本。"))
+
+                # --- Evaluation details ---
+                _evals = sourcer.get_evaluations_for_talent(t["id"])
+                if _evals:
+                    st.markdown(f"#### {bi('Screening Results', '筛选评分明细')}  ({len(_evals)} HC)")
+                    for _ev in _evals:
+                        _ev_score = _ev.get("score", 0)
+                        _sc_color = "#10B981" if _ev_score >= 80 else "#F59E0B" if _ev_score >= 60 else "#DC2626"
+                        _ev_verdict = _ev.get("verdict", "")
+                        _ev_disp = _ev.get("disposition", "Pending")
+                        st.markdown(
+                            f"<div style='background:#F8FAFC;border:1px solid #E2E8F0;border-left:4px solid {_sc_color};"
+                            f"border-radius:6px;padding:10px 14px;margin-bottom:6px;'>"
+                            f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
+                            f"<span style='font-weight:600;'>{html.escape(_ev.get('role_title', ''))}"
+                            f" · {html.escape(_ev.get('hc_location', ''))}</span>"
+                            f"<span style='font-size:1.1rem;font-weight:700;color:{_sc_color};'>{_ev_score:.0f}/100</span></div>"
+                            f"<div style='color:#64748B;font-size:0.8rem;margin-top:2px;'>"
+                            f"Verdict: {html.escape(_ev_verdict)} · Status: {html.escape(_ev_disp)}"
+                            f" · {html.escape(_ev.get('created_at', ''))}</div></div>",
+                            unsafe_allow_html=True,
+                        )
+                        with st.expander(bi("View Full Evaluation", "查看完整评估"), expanded=False):
+                            st.markdown(_ev.get("evaluation_md") or bi("No detail.", "暂无详情。"))
+                else:
+                    st.markdown(f"#### {bi('Screening Results', '筛选评分明细')}")
+                    st.info(bi(
+                        "Not screened yet. Run Auto Sourcing in Tab 2 to evaluate.",
+                        "尚未筛选。请在「自动寻源」标签页运行扫描。",
+                    ))
 
 # =====================================================================
 # Tab 2: Auto Sourcing Runs
