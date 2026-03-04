@@ -43,12 +43,10 @@ tab_pool, tab_run, tab_shortlist, tab_frozen = st.tabs([
 with tab_pool:
     # Stats banner
     pool_stats = tpm.get_stats()
-    _sc1, _sc2, _sc3 = st.columns(3)
+    _sc1, _sc2 = st.columns(2)
     with _sc1:
         st.metric(bi("Total Resumes", "简历总数"), pool_stats["total"])
     with _sc2:
-        st.metric(bi("Active", "活跃"), pool_stats["active"])
-    with _sc3:
         st.metric(bi("Added This Week", "本周新增"), pool_stats["recent_7d"])
 
     st.markdown("---")
@@ -105,16 +103,10 @@ with tab_pool:
         st.info(bi("No resumes in the talent pool yet.", "简历库暂无数据，请上传简历。"))
     else:
         for t in all_talents:
-            _active_badge = (
-                '<span style="background:#DCFCE7;color:#166534;padding:2px 8px;border-radius:10px;font-size:0.72rem;">Active</span>'
-                if t["is_active"]
-                else '<span style="background:#FEE2E2;color:#991B1B;padding:2px 8px;border-radius:10px;font-size:0.72rem;">Inactive</span>'
-            )
             # Evaluation status badge
             _eval_badge = ""
             if t.get("best_score") is not None:
                 _bs = t["best_score"]
-                _bv = t.get("best_verdict") or ""
                 if _bs >= 80:
                     _eval_badge = f'<span style="background:#DCFCE7;color:#166534;padding:2px 8px;border-radius:10px;font-size:0.72rem;margin-left:4px;">Best: {_bs:.0f}/100 Strong Match</span>'
                 elif _bs >= 60:
@@ -134,7 +126,7 @@ with tab_pool:
                 f"<div style='background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:12px 16px;margin-bottom:6px;'>"
                 f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
                 f"<div><span style='font-weight:600;font-size:0.95rem;'>{html.escape(t.get('candidate_name') or t['file_name'])}</span> "
-                f"{_active_badge}{_eval_badge}</div>"
+                f"{_eval_badge}</div>"
                 f"<div style='color:#94A3B8;font-size:0.75rem;'>{html.escape(t['uploaded_at'])}</div></div>"
                 f"<div style='color:#64748B;font-size:0.8rem;margin-top:4px;'>📄 {html.escape(t['file_name'])}"
                 f"{' · ' + html.escape(t['email']) if t.get('email') else ''}"
@@ -144,13 +136,22 @@ with tab_pool:
             )
             _tc1, _tc2 = st.columns([4, 1])
             with _tc2:
-                if t["is_active"]:
-                    if st.button(bi("Deactivate", "停用"), key=f"deact_{t['id']}", use_container_width=True):
-                        tpm.deactivate(t["id"])
+                if st.button(bi("Delete", "删除"), key=f"del_{t['id']}", use_container_width=True, type="secondary"):
+                    st.session_state[f"confirm_del_{t['id']}"] = True
+            if st.session_state.get(f"confirm_del_{t['id']}"):
+                st.warning(bi(
+                    f"Delete {t.get('candidate_name') or t['file_name']}? This also removes related shortlist entries.",
+                    f"确认删除 {t.get('candidate_name') or t['file_name']}？相关的推荐清单记录也会被移除。",
+                ))
+                _dc1, _dc2 = st.columns(2)
+                with _dc1:
+                    if st.button(bi("Confirm Delete", "确认删除"), key=f"cfm_del_{t['id']}", type="primary", use_container_width=True):
+                        tpm.delete_talent(t["id"])
+                        st.session_state.pop(f"confirm_del_{t['id']}", None)
                         st.rerun()
-                else:
-                    if st.button(bi("Reactivate", "启用"), key=f"react_{t['id']}", use_container_width=True):
-                        tpm.reactivate(t["id"])
+                with _dc2:
+                    if st.button(bi("Cancel", "取消"), key=f"cancel_del_{t['id']}", use_container_width=True):
+                        st.session_state.pop(f"confirm_del_{t['id']}", None)
                         st.rerun()
 
 # =====================================================================
@@ -160,11 +161,11 @@ with tab_run:
     st.markdown(f"### {bi('Run Auto Sourcing', '运行自动寻源')}")
 
     _approved_hcs = hm.get_approved_requests()
-    _active_talents = tpm.get_active_talents()
+    _all_talents = tpm.get_all_talents()
     st.markdown(
         bi(
-            f"**Ready:** {len(_approved_hcs)} approved HC(s), {len(_active_talents)} active resume(s) in pool.",
-            f"**就绪：** {len(_approved_hcs)} 个已审批HC，简历库中 {len(_active_talents)} 份活跃简历。",
+            f"**Ready:** {len(_approved_hcs)} approved HC(s), {len(_all_talents)} resume(s) in pool.",
+            f"**就绪：** {len(_approved_hcs)} 个已审批HC，简历库中 {len(_all_talents)} 份简历。",
         )
     )
 
@@ -174,7 +175,7 @@ with tab_run:
             bi("🚀 Run Incremental Scan", "🚀 运行增量扫描"),
             type="primary",
             use_container_width=True,
-            disabled=(not _approved_hcs or not _active_talents),
+            disabled=(not _approved_hcs or not _all_talents),
         ):
             with st.spinner(bi("Running auto sourcing (incremental)...", "正在运行自动寻源（增量）...")):
                 run_id = sourcer.run(force_full=False)
@@ -193,7 +194,7 @@ with tab_run:
         if st.button(
             bi("🔄 Run Full Scan", "🔄 运行全量扫描"),
             use_container_width=True,
-            disabled=(not _approved_hcs or not _active_talents),
+            disabled=(not _approved_hcs or not _all_talents),
         ):
             with st.spinner(bi("Running auto sourcing (full)...", "正在运行自动寻源（全量）...")):
                 run_id = sourcer.run(force_full=True)

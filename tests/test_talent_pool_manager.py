@@ -64,24 +64,25 @@ def test_import_unsupported_format(tpm, agent):
     assert result["imported"] == 0
 
 
-def test_get_active_talents(tpm, agent):
+def test_get_all_talents(tpm, agent):
     tpm.import_files([FakeUploadedFile("a.pdf")], agent)
     tpm.import_files([FakeUploadedFile("b.txt", b"different content")], agent)
-    talents = tpm.get_active_talents()
+    talents = tpm.get_all_talents()
     assert len(talents) == 2
 
 
-def test_deactivate_and_reactivate(tpm, agent):
+def test_delete_talent(tpm, agent):
     tpm.import_files([FakeUploadedFile("c.pdf")], agent)
-    talents = tpm.get_active_talents()
+    talents = tpm.get_all_talents()
     assert len(talents) == 1
 
     tid = talents[0]["id"]
-    tpm.deactivate(tid)
-    assert len(tpm.get_active_talents()) == 0
+    assert tpm.delete_talent(tid) is True
+    assert len(tpm.get_all_talents()) == 0
 
-    tpm.reactivate(tid)
-    assert len(tpm.get_active_talents()) == 1
+
+def test_delete_nonexistent_talent(tpm):
+    assert tpm.delete_talent("tp_nonexistent") is False
 
 
 def test_get_talent(tpm, agent):
@@ -98,7 +99,6 @@ def test_get_stats(tpm, agent):
     tpm.import_files([FakeUploadedFile("e.pdf")], agent)
     stats = tpm.get_stats()
     assert stats["total"] == 1
-    assert stats["active"] == 1
 
 
 def test_import_from_directory(tpm, agent, tmp_path):
@@ -117,11 +117,11 @@ def test_import_from_nonexistent_directory(tpm, agent):
     assert len(result["errors"]) == 1
 
 
-def test_get_active_talents_since_date(tpm, agent):
+def test_get_all_talents_since_date(tpm, agent):
     tpm.import_files([FakeUploadedFile("f.pdf")], agent)
     # Future date should return nothing
-    talents = tpm.get_active_talents(since_date="2099-01-01")
+    talents = tpm.get_all_talents(since_date="2099-01-01")
     assert len(talents) == 0
     # Past date should return all
-    talents = tpm.get_active_talents(since_date="2000-01-01")
+    talents = tpm.get_all_talents(since_date="2000-01-01")
     assert len(talents) == 1

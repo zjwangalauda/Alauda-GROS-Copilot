@@ -135,8 +135,8 @@ class AutoSourcer:
         if is_incremental:
             since = self._get_last_run_date()
             if since:
-                return self.tpm.get_active_talents(since_date=since)
-        return self.tpm.get_active_talents()
+                return self.tpm.get_all_talents(since_date=since)
+        return self.tpm.get_all_talents()
 
     def _should_skip(self, talent_id: str, hc_id: str) -> bool:
         """Skip if already decided (Interested/frozen Not Interested) for this HC."""

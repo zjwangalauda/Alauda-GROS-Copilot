@@ -131,17 +131,17 @@ class TalentPoolManager:
     # Query
     # ------------------------------------------------------------------
 
-    def get_active_talents(self, since_date: str | None = None) -> list[dict]:
-        """Return active talent pool entries, optionally filtered by upload date >= since_date."""
+    def get_all_talents(self, since_date: str | None = None) -> list[dict]:
+        """Return all talent pool entries, optionally filtered by upload date >= since_date."""
         conn = self._conn()
         if since_date:
             rows = conn.execute(
-                "SELECT * FROM talent_pool WHERE is_active = 1 AND uploaded_at >= ? ORDER BY uploaded_at DESC",
+                "SELECT * FROM talent_pool WHERE uploaded_at >= ? ORDER BY uploaded_at DESC",
                 (since_date,),
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT * FROM talent_pool WHERE is_active = 1 ORDER BY uploaded_at DESC"
+                "SELECT * FROM talent_pool ORDER BY uploaded_at DESC"
             ).fetchall()
         return [dict(r) for r in rows]
 
@@ -155,29 +155,22 @@ class TalentPoolManager:
         rows = conn.execute("SELECT * FROM talent_pool ORDER BY uploaded_at DESC").fetchall()
         return [dict(r) for r in rows]
 
-    def deactivate(self, talent_id: str) -> bool:
+    def delete_talent(self, talent_id: str) -> bool:
+        """Permanently delete a talent and its related shortlist entries."""
         conn = self._conn()
-        cur = conn.execute("UPDATE talent_pool SET is_active = 0 WHERE id = ?", (talent_id,))
-        conn.commit()
-        return cur.rowcount > 0
-
-    def reactivate(self, talent_id: str) -> bool:
-        conn = self._conn()
-        cur = conn.execute("UPDATE talent_pool SET is_active = 1 WHERE id = ?", (talent_id,))
+        conn.execute("DELETE FROM shortlist WHERE talent_id = ?", (talent_id,))
+        cur = conn.execute("DELETE FROM talent_pool WHERE id = ?", (talent_id,))
         conn.commit()
         return cur.rowcount > 0
 
     def get_stats(self) -> dict:
         conn = self._conn()
         total = conn.execute("SELECT COUNT(*) FROM talent_pool").fetchone()[0]
-        active = conn.execute("SELECT COUNT(*) FROM talent_pool WHERE is_active = 1").fetchone()[0]
-        today = date.today().isoformat()
-        # Talents uploaded in the last 7 days
         week_ago = date.today().replace(day=max(1, date.today().day - 7)).isoformat()
         recent = conn.execute(
             "SELECT COUNT(*) FROM talent_pool WHERE uploaded_at >= ?", (week_ago,)
         ).fetchone()[0]
-        return {"total": total, "active": active, "recent_7d": recent}
+        return {"total": total, "recent_7d": recent}
 
     def get_all_with_eval_status(self) -> list[dict]:
         """Return all talents with their best evaluation score and verdict from shortlist."""
