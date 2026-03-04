@@ -337,7 +337,7 @@ with tab_frozen:
     st.markdown(
         bi(
             f"Candidates marked 'Not Interested' are frozen for {FREEZE_DAYS} days and excluded from future scans.",
-            f"标记为"无意愿"的候选人将被冷冻 {FREEZE_DAYS} 天，期间不会在后续扫描中再次推荐。",
+            f"标记为'无意愿'的候选人将被冷冻 {FREEZE_DAYS} 天，期间不会在后续扫描中再次推荐。",
         )
     )
 
