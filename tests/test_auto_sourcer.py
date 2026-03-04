@@ -1,9 +1,8 @@
 """Tests for AutoSourcer."""
 
 import pytest
-from datetime import date, timedelta
 
-from auto_sourcer import AutoSourcer, FREEZE_DAYS
+from auto_sourcer import AutoSourcer
 from hc_manager import HCManager
 from talent_pool_manager import TalentPoolManager
 from candidate_manager import CandidateManager
@@ -119,7 +118,7 @@ def test_parse_score_low():
 def test_run_with_no_hcs():
     agent = FakeAgent()
     sourcer = AutoSourcer(agent)
-    run_id = sourcer.run()
+    sourcer.run()
     runs = sourcer.get_run_history()
     assert len(runs) == 1
     assert runs[0]["status"] == "completed"
@@ -132,7 +131,7 @@ def test_run_with_no_talents(tmp_path):
     _seed_hc(hm)
 
     sourcer = AutoSourcer(agent)
-    run_id = sourcer.run()
+    sourcer.run()
     runs = sourcer.get_run_history()
     assert runs[0]["status"] == "completed"
     assert runs[0]["talent_scanned"] == 0
@@ -142,11 +141,11 @@ def test_full_run_produces_shortlist(tmp_path):
     agent = FakeAgent()
     hm = HCManager(db_path=str(tmp_path / "x.json"))
     tpm = TalentPoolManager()
-    hc_id = _seed_hc(hm)
+    _seed_hc(hm)
     _seed_talent(tpm, agent)
 
     sourcer = AutoSourcer(agent)
-    run_id = sourcer.run(force_full=True)
+    sourcer.run(force_full=True)
 
     runs = sourcer.get_run_history()
     assert runs[0]["status"] == "completed"
@@ -318,7 +317,7 @@ def test_unfreeze(tmp_path):
 def test_build_jd_from_hc(tmp_path):
     agent = FakeAgent()
     hm = HCManager(db_path=str(tmp_path / "x.json"))
-    hc_id = _seed_hc(hm)
+    _seed_hc(hm)
     hcs = hm.get_approved_requests()
 
     sourcer = AutoSourcer(agent)

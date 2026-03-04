@@ -1,8 +1,6 @@
 """Tests for TalentPoolManager."""
 
-import os
 import pytest
-from unittest.mock import MagicMock
 
 from talent_pool_manager import TalentPoolManager
 
