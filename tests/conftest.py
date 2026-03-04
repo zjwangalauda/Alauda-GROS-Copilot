@@ -5,6 +5,7 @@ import db as db_mod
 from hc_manager import HCManager
 from knowledge_manager import KnowledgeManager
 from candidate_manager import CandidateManager
+from talent_pool_manager import TalentPoolManager
 
 
 @pytest.fixture(autouse=True)
@@ -35,3 +36,8 @@ def km(tmp_path):
 @pytest.fixture
 def cm(tmp_path):
     return CandidateManager(db_path=str(tmp_path / "nonexistent.json"))
+
+
+@pytest.fixture
+def tpm():
+    return TalentPoolManager()

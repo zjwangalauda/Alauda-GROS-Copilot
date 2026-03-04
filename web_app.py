@@ -57,6 +57,7 @@ pages = {
         st.Page("pages/mod3_resume_matcher.py",     title="M3: Resume Match / 简历初筛",          icon="📄"),
         st.Page("pages/mod4_scorecard.py",          title="M4: Scorecard / 面试打分卡",           icon="📝"),
         st.Page("pages/mod7_candidate_pipeline.py", title="M7: Pipeline / 候选人看板",            icon="👥"),
+        st.Page("pages/mod8_auto_sourcing.py",     title="M8: Auto Sourcing / 自动寻源",         icon="🤖"),
     ],
     "Data & Intelligence / 数据与智库": [
         st.Page("pages/dashboard.py",               title="Dashboard / 数据看板",                 icon="📊"),

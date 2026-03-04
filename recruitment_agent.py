@@ -479,3 +479,43 @@ Requirements:
                 return "Unsupported file format. Supported: PDF, DOCX, TXT. / 不支持的文件格式，支持：PDF、DOCX、TXT。"
         except Exception as e:
             return f"File parsing failed / 文件解析失败: {str(e)}"
+
+    def extract_candidate_info(self, parsed_text: str) -> dict:
+        """Extract candidate name, email, phone, LinkedIn URL, and skill tags from resume text.
+
+        Returns a dict with keys: candidate_name, email, phone, linkedin_url, tags.
+        Falls back to empty strings on failure.
+        """
+        import json as _json
+        empty = {"candidate_name": "", "email": "", "phone": "", "linkedin_url": "", "tags": ""}
+        if not self.client or not parsed_text.strip():
+            return empty
+
+        prompt = f"""Extract the following structured information from this resume text.
+Output ONLY a valid JSON object with these exact keys — no explanation, no markdown fences:
+- "candidate_name": full name of the candidate (string)
+- "email": email address if found (string, empty if not found)
+- "phone": phone number if found (string, empty if not found)
+- "linkedin_url": LinkedIn profile URL if found (string, empty if not found)
+- "tags": comma-separated skill/technology tags, max 10 most relevant (string)
+
+Resume text:
+<user_input>
+{parsed_text[:6000]}
+</user_input>
+"""
+        try:
+            response = self._call_llm(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.0,
+            )
+            content = response.choices[0].message.content.strip()
+            if content.startswith("```"):
+                content = content[content.find("\n") + 1:]
+                content = content[:content.rfind("```")].strip()
+            result = _json.loads(content)
+            return {k: str(result.get(k, "")) for k in empty}
+        except Exception:
+            logger.warning("Candidate info extraction failed", exc_info=True)
+            return empty
