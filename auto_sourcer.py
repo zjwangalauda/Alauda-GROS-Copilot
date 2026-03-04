@@ -94,10 +94,10 @@ class AutoSourcer:
                         except Exception as e:
                             logger.error("Eval failed for talent %s: %s", talent["id"], e)
 
-                # Save results (only those meeting threshold)
+                # Save all evaluated results (both qualified and disqualified)
                 for talent_id, (score, verdict, eval_md) in results.items():
+                    self._save_result(run_id, hc["id"], talent_id, score, verdict, eval_md)
                     if score >= PASS_THRESHOLD:
-                        self._save_result(run_id, hc["id"], talent_id, score, verdict, eval_md)
                         total_matches += 1
 
             duration = time.time() - start
@@ -253,8 +253,11 @@ class AutoSourcer:
         return [dict(r) for r in rows]
 
     def get_shortlist(self, hc_id: str | None = None, run_id: str | None = None,
-                      disposition: str | None = None) -> list[dict]:
-        """Query shortlist with optional filters. Joins talent_pool for candidate info."""
+                      disposition: str | None = None, qualified: str | None = None) -> list[dict]:
+        """Query shortlist with optional filters. Joins talent_pool for candidate info.
+
+        qualified: "qualified" (score >= PASS_THRESHOLD), "disqualified" (< PASS_THRESHOLD), or None (all).
+        """
         conn = self._conn()
         sql = """
             SELECT s.*, t.candidate_name, t.file_name, t.email, t.phone,
@@ -275,6 +278,12 @@ class AutoSourcer:
         if disposition:
             sql += " AND s.disposition = ?"
             params.append(disposition)
+        if qualified == "qualified":
+            sql += " AND s.score >= ?"
+            params.append(PASS_THRESHOLD)
+        elif qualified == "disqualified":
+            sql += " AND s.score < ?"
+            params.append(PASS_THRESHOLD)
         sql += " ORDER BY s.score DESC"
         rows = conn.execute(sql, params).fetchall()
         return [dict(r) for r in rows]

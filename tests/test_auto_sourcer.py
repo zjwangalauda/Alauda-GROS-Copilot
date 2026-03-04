@@ -158,7 +158,7 @@ def test_full_run_produces_shortlist(tmp_path):
     assert shortlist[0]["verdict"] == "Strong Match"
 
 
-def test_low_score_not_in_shortlist(tmp_path):
+def test_low_score_in_shortlist_as_disqualified(tmp_path):
     agent = LowScoreAgent()
     hm = HCManager(db_path=str(tmp_path / "x.json"))
     tpm = TalentPoolManager()
@@ -168,8 +168,19 @@ def test_low_score_not_in_shortlist(tmp_path):
     sourcer = AutoSourcer(agent)
     sourcer.run(force_full=True)
 
-    shortlist = sourcer.get_shortlist()
-    assert len(shortlist) == 0
+    # All results are saved, including disqualified
+    all_results = sourcer.get_shortlist()
+    assert len(all_results) == 1
+    assert all_results[0]["score"] == 40.0
+    assert all_results[0]["verdict"] == "Disqualified"
+
+    # But filtering by qualified returns nothing
+    qualified = sourcer.get_shortlist(qualified="qualified")
+    assert len(qualified) == 0
+
+    # Filtering by disqualified returns the entry
+    disqualified = sourcer.get_shortlist(qualified="disqualified")
+    assert len(disqualified) == 1
 
 
 # ------------------------------------------------------------------

@@ -229,20 +229,28 @@ with tab_run:
 # Tab 3: Shortlist
 # =====================================================================
 with tab_shortlist:
-    st.markdown(f"### {bi('Recommended Candidates', '推荐候选人清单')}")
+    st.markdown(f"### {bi('Screening Results', '筛选结果清单')}")
 
     # Filters
-    _fc1, _fc2 = st.columns(2)
+    _fc1, _fc2, _fc3 = st.columns(3)
     with _fc1:
         _hc_options = ["All / 全部"] + [f"{h['id']} — {h['role_title']} ({h['location']})" for h in _approved_hcs]
         _selected_hc_label = st.selectbox(bi("Filter by HC", "按HC筛选"), _hc_options)
         _filter_hc = None if _selected_hc_label == "All / 全部" else _selected_hc_label.split(" — ")[0]
     with _fc2:
+        _qual_options = [
+            bi("Qualified (>=60)", "合格 (>=60分)"),
+            bi("Disqualified (<60)", "不合格 (<60分)"),
+            "All / 全部",
+        ]
+        _selected_qual = st.selectbox(bi("Filter by Score", "按评分筛选"), _qual_options)
+        _filter_qual = "qualified" if "Qualified" in _selected_qual else "disqualified" if "Disqualified" in _selected_qual else None
+    with _fc3:
         _disp_options = ["Pending", "Interested", "Not Interested", "All / 全部"]
         _selected_disp = st.selectbox(bi("Filter by Status", "按状态筛选"), _disp_options)
         _filter_disp = None if _selected_disp == "All / 全部" else _selected_disp
 
-    shortlist = sourcer.get_shortlist(hc_id=_filter_hc, disposition=_filter_disp)
+    shortlist = sourcer.get_shortlist(hc_id=_filter_hc, disposition=_filter_disp, qualified=_filter_qual)
 
     if not shortlist:
         st.info(bi(
@@ -250,44 +258,61 @@ with tab_shortlist:
             "未找到匹配候选人。请先运行自动寻源或调整筛选条件。",
         ))
     else:
-        st.markdown(bi(f"**{len(shortlist)} candidate(s)**", f"**共 {len(shortlist)} 名候选人**"))
+        # Summary counts
+        _qualified_count = sum(1 for s in shortlist if s.get("score", 0) >= PASS_THRESHOLD)
+        _disqualified_count = len(shortlist) - _qualified_count
+        st.markdown(
+            bi(
+                f"**{len(shortlist)} candidate(s)** — Qualified: {_qualified_count}, Disqualified: {_disqualified_count}",
+                f"**共 {len(shortlist)} 名候选人** — 合格: {_qualified_count}，不合格: {_disqualified_count}",
+            )
+        )
 
         for idx, sl in enumerate(shortlist):
             _score = sl.get("score", 0)
+            _is_qualified = _score >= PASS_THRESHOLD
             _score_color = "#10B981" if _score >= 80 else "#F59E0B" if _score >= 60 else "#DC2626"
             _verdict = sl.get("verdict", "")
             _disp = sl.get("disposition", "Pending")
+
+            # Build status badges
+            _badges = ""
+            if not _is_qualified:
+                _badges += '<span style="background:#FEE2E2;color:#991B1B;padding:2px 8px;border-radius:10px;font-size:0.72rem;margin-right:4px;">Disqualified</span>'
             _disp_badge = {
                 "Pending": '<span style="background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:10px;font-size:0.72rem;">Pending</span>',
-                "Interested": '<span style="background:#DCFCE7;color:#166534;padding:2px 8px;border-radius:10px;font-size:0.72rem;">Interested ✅</span>',
-                "Not Interested": '<span style="background:#FEE2E2;color:#991B1B;padding:2px 8px;border-radius:10px;font-size:0.72rem;">Not Interested ❄️</span>',
+                "Interested": '<span style="background:#DCFCE7;color:#166534;padding:2px 8px;border-radius:10px;font-size:0.72rem;">Interested</span>',
+                "Not Interested": '<span style="background:#FEE2E2;color:#991B1B;padding:2px 8px;border-radius:10px;font-size:0.72rem;">Frozen</span>',
             }.get(_disp, "")
+            _badges += _disp_badge
 
+            _bg_color = "#fff" if _is_qualified else "#FAFAFA"
             st.markdown(
-                f"<div style='background:#fff;border:1px solid #E2E8F0;border-left:4px solid {_score_color};"
-                f"border-radius:8px;padding:14px 16px;margin-bottom:8px;'>"
+                f"<div style='background:{_bg_color};border:1px solid #E2E8F0;border-left:4px solid {_score_color};"
+                f"border-radius:8px;padding:14px 16px;margin-bottom:8px;"
+                f"{'opacity:0.7;' if not _is_qualified else ''}'>"
                 f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
                 f"<div>"
                 f"<span style='font-weight:700;font-size:1rem;'>{html.escape(sl.get('candidate_name') or 'Unknown')}</span> "
-                f"{_disp_badge}"
+                f"{_badges}"
                 f"</div>"
                 f"<div style='font-size:1.2rem;font-weight:700;color:{_score_color};'>{_score:.0f}/100</div></div>"
                 f"<div style='color:#64748B;font-size:0.82rem;margin-top:4px;'>"
-                f"📌 {html.escape(sl.get('role_title', ''))} · 📍 {html.escape(sl.get('hc_location', ''))}"
-                f"{' · 📧 ' + html.escape(sl.get('email', '')) if sl.get('email') else ''}"
-                f"{' · 🔗 LinkedIn' if sl.get('talent_linkedin') else ''}"
+                f"HC: {html.escape(sl.get('role_title', ''))} · {html.escape(sl.get('hc_location', ''))}"
+                f"{' · ' + html.escape(sl.get('email', '')) if sl.get('email') else ''}"
+                f"{' · LinkedIn' if sl.get('talent_linkedin') else ''}"
                 f"</div>"
-                f"<div style='color:#94A3B8;font-size:0.78rem;margin-top:2px;'>Verdict: {html.escape(_verdict)} · HC: {html.escape(sl.get('hc_id', ''))}</div>"
+                f"<div style='color:#94A3B8;font-size:0.78rem;margin-top:2px;'>Verdict: {html.escape(_verdict)}</div>"
                 f"</div>",
                 unsafe_allow_html=True,
             )
 
-            # Action row for Pending items
-            if _disp == "Pending":
+            # Action buttons — only for qualified & Pending candidates
+            if _is_qualified and _disp == "Pending":
                 _ac1, _ac2, _ac3 = st.columns([1, 1, 2])
                 with _ac1:
                     if st.button(
-                        bi("✅ Interested", "✅ 有意愿"),
+                        bi("Interested", "有意愿"),
                         key=f"int_{sl['id']}_{idx}",
                         use_container_width=True,
                         type="primary",
@@ -301,7 +326,7 @@ with tab_shortlist:
                             st.rerun()
                 with _ac2:
                     if st.button(
-                        bi("❌ Not Interested", "❌ 无意愿"),
+                        bi("Not Interested", "无意愿"),
                         key=f"noint_{sl['id']}_{idx}",
                         use_container_width=True,
                     ):
@@ -325,8 +350,8 @@ with tab_shortlist:
                         ))
                         st.rerun()
 
-            # Expandable evaluation detail
-            with st.expander(bi("📊 View Full Evaluation", "📊 查看完整评估"), expanded=False):
+            # Expandable evaluation detail — available for both qualified and disqualified
+            with st.expander(bi("View Full Evaluation", "查看完整评估"), expanded=False):
                 st.markdown(sl.get("evaluation_md", "No evaluation data."))
 
 # =====================================================================
