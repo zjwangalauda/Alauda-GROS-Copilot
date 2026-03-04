@@ -60,6 +60,7 @@ class TalentPoolManager:
         Returns same stats dict as import_files.
         """
         stats = {"imported": 0, "skipped_dup": 0, "skipped_unsupported": 0, "errors": []}
+        dir_path = os.path.expanduser(dir_path)
         if not os.path.isdir(dir_path):
             stats["errors"].append(f"Directory not found: {dir_path}")
             return stats
