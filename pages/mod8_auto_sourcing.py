@@ -98,9 +98,9 @@ with tab_pool:
                     st.error(err)
             st.rerun()
 
-    # Talent list
+    # Talent list with evaluation status
     st.markdown(f"### {bi('Resume Library', '简历库列表')}")
-    all_talents = tpm.get_all()
+    all_talents = tpm.get_all_with_eval_status()
     if not all_talents:
         st.info(bi("No resumes in the talent pool yet.", "简历库暂无数据，请上传简历。"))
     else:
@@ -110,6 +110,20 @@ with tab_pool:
                 if t["is_active"]
                 else '<span style="background:#FEE2E2;color:#991B1B;padding:2px 8px;border-radius:10px;font-size:0.72rem;">Inactive</span>'
             )
+            # Evaluation status badge
+            _eval_badge = ""
+            if t.get("best_score") is not None:
+                _bs = t["best_score"]
+                _bv = t.get("best_verdict") or ""
+                if _bs >= 80:
+                    _eval_badge = f'<span style="background:#DCFCE7;color:#166534;padding:2px 8px;border-radius:10px;font-size:0.72rem;margin-left:4px;">Best: {_bs:.0f}/100 Strong Match</span>'
+                elif _bs >= 60:
+                    _eval_badge = f'<span style="background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:10px;font-size:0.72rem;margin-left:4px;">Best: {_bs:.0f}/100 Borderline</span>'
+                else:
+                    _eval_badge = f'<span style="background:#FEE2E2;color:#991B1B;padding:2px 8px;border-radius:10px;font-size:0.72rem;margin-left:4px;">Best: {_bs:.0f}/100 Disqualified</span>'
+            elif t.get("eval_count") is None or t["eval_count"] == 0:
+                _eval_badge = '<span style="background:#F1F5F9;color:#64748B;padding:2px 8px;border-radius:10px;font-size:0.72rem;margin-left:4px;">Not Screened</span>'
+
             _tags_html = ""
             if t.get("tags"):
                 _tags_html = " ".join(
@@ -120,11 +134,11 @@ with tab_pool:
                 f"<div style='background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:12px 16px;margin-bottom:6px;'>"
                 f"<div style='display:flex;justify-content:space-between;align-items:center;'>"
                 f"<div><span style='font-weight:600;font-size:0.95rem;'>{html.escape(t.get('candidate_name') or t['file_name'])}</span> "
-                f"{_active_badge}</div>"
+                f"{_active_badge}{_eval_badge}</div>"
                 f"<div style='color:#94A3B8;font-size:0.75rem;'>{html.escape(t['uploaded_at'])}</div></div>"
                 f"<div style='color:#64748B;font-size:0.8rem;margin-top:4px;'>📄 {html.escape(t['file_name'])}"
-                f"{' · 📧 ' + html.escape(t['email']) if t.get('email') else ''}"
-                f"{' · 🔗 LinkedIn' if t.get('linkedin_url') else ''}</div>"
+                f"{' · ' + html.escape(t['email']) if t.get('email') else ''}"
+                f"{' · LinkedIn' if t.get('linkedin_url') else ''}</div>"
                 f"<div style='margin-top:6px;'>{_tags_html}</div></div>",
                 unsafe_allow_html=True,
             )

@@ -178,3 +178,25 @@ class TalentPoolManager:
             "SELECT COUNT(*) FROM talent_pool WHERE uploaded_at >= ?", (week_ago,)
         ).fetchone()[0]
         return {"total": total, "active": active, "recent_7d": recent}
+
+    def get_all_with_eval_status(self) -> list[dict]:
+        """Return all talents with their best evaluation score and verdict from shortlist."""
+        conn = self._conn()
+        rows = conn.execute(
+            """SELECT t.*,
+                      sl_best.best_score, sl_best.best_verdict, sl_best.eval_count
+               FROM talent_pool t
+               LEFT JOIN (
+                   SELECT talent_id,
+                          MAX(score) AS best_score,
+                          -- Get verdict of highest score
+                          (SELECT verdict FROM shortlist s2
+                           WHERE s2.talent_id = s.talent_id
+                           ORDER BY s2.score DESC LIMIT 1) AS best_verdict,
+                          COUNT(*) AS eval_count
+                   FROM shortlist s
+                   GROUP BY talent_id
+               ) sl_best ON t.id = sl_best.talent_id
+               ORDER BY t.uploaded_at DESC"""
+        ).fetchall()
+        return [dict(r) for r in rows]
