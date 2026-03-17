@@ -1,8 +1,14 @@
 import io
+import ssl
 import logging
+import httpx
 from pypdf import PdfReader
 from openai import OpenAI, RateLimitError, APITimeoutError, APIConnectionError
 import os
+
+# 内网自签证书：跳过 SSL 验证
+_insecure_client = httpx.Client(verify=False)
+ssl._create_default_https_context = ssl._create_unverified_context
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, before_sleep_log, after_log
@@ -40,7 +46,7 @@ class RecruitmentAgent:
         # Strong model: JD generation, interview scorecard, knowledge extraction
         # Falls back to self.model if STRONG_MODEL is not configured
         self.strong_model = os.environ.get("STRONG_MODEL", self.model)
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url) if self.api_key else None
+        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url, http_client=_insecure_client) if self.api_key else None
 
         self.system_prompt = """
 # Role: Global Elite Tech Recruiter & Recruitment Systems Architect

@@ -1,8 +1,13 @@
 import logging
 import os
+import ssl
 import shutil
 
+import httpx
 import streamlit as st
+
+# 内网自签证书：跳过 SSL 验证
+ssl._create_default_https_context = ssl._create_unverified_context
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
